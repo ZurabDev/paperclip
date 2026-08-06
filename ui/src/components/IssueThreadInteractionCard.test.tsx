@@ -387,32 +387,37 @@ describe("IssueThreadInteractionCard", () => {
     expect(host.textContent).toContain("No reason provided.");
   });
 
-  it("requires a decline reason when the request confirmation payload asks for one", async () => {
+  it("requires a revision note when the request confirmation payload asks for one", async () => {
     const onRejectInteraction = vi.fn(async () => undefined);
     const host = renderCard({
       interaction: pendingRequestConfirmationInteraction,
       onRejectInteraction,
     });
 
-    const declineButton = Array.from(host.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Request revisions"),
+    // rejectRequiresReason drops the bare Reject: the only send-back path is Revise…
+    expect(Array.from(host.querySelectorAll("button")).some((button) =>
+      button.textContent?.trim() === "Reject",
+    )).toBe(false);
+    const reviseButton = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Revise"),
     );
-    expect(declineButton).toBeTruthy();
+    expect(reviseButton).toBeTruthy();
 
     await act(async () => {
-      declineButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      reviseButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    const saveButton = Array.from(host.querySelectorAll("button")).filter((button) =>
-      button.textContent?.includes("Request revisions"),
-    ).at(-1);
-    expect(saveButton?.hasAttribute("disabled")).toBe(false);
+    const sendButton = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Send revision"),
+    );
+    expect(sendButton?.hasAttribute("disabled")).toBe(false);
 
     await act(async () => {
-      saveButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      sendButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(host.textContent).toContain("A decline reason is required.");
+    expect(host.textContent).toContain("Add a note describing the changes you want.");
+    expect(onRejectInteraction).not.toHaveBeenCalled();
 
     const textarea = host.querySelector("textarea") as HTMLTextAreaElement | null;
     expect(textarea).toBeTruthy();
@@ -426,12 +431,12 @@ describe("IssueThreadInteractionCard", () => {
       valueSetter?.call(textarea, "Needs a smaller phase split");
       textarea!.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    const enabledSaveButton = Array.from(host.querySelectorAll("button")).filter((button) =>
-      button.textContent?.includes("Request revisions"),
-    ).at(-1);
-    expect(enabledSaveButton?.hasAttribute("disabled")).toBe(false);
+    const enabledSendButton = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Send revision"),
+    );
+    expect(enabledSendButton?.hasAttribute("disabled")).toBe(false);
     await act(async () => {
-      enabledSaveButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      enabledSendButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
     expect(onRejectInteraction).toHaveBeenCalledWith(
@@ -601,11 +606,11 @@ describe("IssueThreadInteractionCard", () => {
       onUploadImage,
     });
 
-    const declineButton = Array.from(host.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Request revisions"),
+    const reviseButton = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Revise"),
     );
     await act(async () => {
-      declineButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      reviseButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
     const attachButton = Array.from(host.querySelectorAll("button")).find((button) =>
@@ -628,11 +633,11 @@ describe("IssueThreadInteractionCard", () => {
     });
     expect(onUploadImage).toHaveBeenCalledTimes(1);
 
-    const saveButton = Array.from(host.querySelectorAll("button")).filter((button) =>
-      button.textContent?.includes("Request revisions"),
-    ).at(-1);
+    const sendButton = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Send revision"),
+    );
     await act(async () => {
-      saveButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      sendButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
     expect(onRejectInteraction).toHaveBeenCalledWith(

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Agent } from "@paperclipai/shared";
 import { AlertTriangle, ArrowUpRight, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, CircleDashed, Clock, ExternalLink, FileText, GitBranch, ImagePlus, Loader2, MessageSquareQuote, MinusCircle, ShieldAlert, ThumbsUp, TriangleAlert, Users, Wrench, X, XCircle } from "lucide-react";
 import { Link } from "@/lib/router";
@@ -1922,6 +1922,204 @@ function RequestToolActionCard({
   );
 }
 
+/**
+ * The single approval grammar shared by every plan / task-approval card
+ * (PAP-418): **Approve · Revise… · Reject**. "Revise…" reveals an attached text
+ * field for the changes you want (the former "decline with a reason" path);
+ * bare "Reject" sends the work back with no note. These are the default words —
+ * producers may still override the accept/reject labels for domain-specific
+ * confirmations (e.g. "Delete selected"), but the shape stays consistent.
+ */
+const CONFIRMATION_APPROVE_LABEL = "Approve";
+const CONFIRMATION_REVISE_LABEL = "Revise…";
+const CONFIRMATION_REJECT_LABEL = "Reject";
+
+/**
+ * The one action control every confirmation card renders (PAP-418), collapsing
+ * what used to be a two-button card plus a separate sticky Plan-pane bar into a
+ * single consistent surface. Producer flags tune which affordances appear:
+ * `allowDeclineReason: false` drops the Revise… path so only Approve/Reject
+ * remain; `rejectRequiresReason: true` drops the bare Reject so every rejection
+ * carries a note. The revise text stays attached to the card.
+ */
+function ConfirmationActionRow({
+  resetKey,
+  approveLabel,
+  reviseLabel = CONFIRMATION_REVISE_LABEL,
+  rejectLabel,
+  approveVariant = "default",
+  primaryActionOnRight = false,
+  allowRevise,
+  rejectRequiresReason,
+  reasonPlaceholder,
+  working,
+  actionError,
+  approveDisabled = false,
+  canApprove,
+  canReject,
+  onApprove,
+  onReject,
+  composeReason,
+  extraReasonSatisfied = false,
+  revisePanelChildren,
+}: {
+  /** Changing this (interaction id + status) collapses the revise panel and
+   * clears its draft text — the row is reused across interaction updates. */
+  resetKey: string;
+  approveLabel: string;
+  reviseLabel?: string;
+  rejectLabel: string;
+  approveVariant?: React.ComponentProps<typeof Button>["variant"];
+  primaryActionOnRight?: boolean;
+  allowRevise: boolean;
+  rejectRequiresReason: boolean;
+  reasonPlaceholder: string;
+  working: "accept" | "reject" | null;
+  actionError: string | null;
+  approveDisabled?: boolean;
+  canApprove: boolean;
+  canReject: boolean;
+  onApprove: () => void;
+  onReject: (reason: string | undefined) => void;
+  /** Compose the final reject reason from the typed text (plan cards append
+   * screenshot markdown here). */
+  composeReason?: (text: string) => string | undefined;
+  /** A required reason is already satisfied by an attachment (e.g. screenshots),
+   * so an empty text box should not block sending the revision. */
+  extraReasonSatisfied?: boolean;
+  /** Extra affordances rendered inside the revise panel (e.g. screenshot attach). */
+  revisePanelChildren?: ReactNode;
+}) {
+  const [revising, setRevising] = useState(false);
+  const [reason, setReason] = useState("");
+  const [attempted, setAttempted] = useState(false);
+
+  useEffect(() => {
+    setRevising(false);
+    setReason("");
+    setAttempted(false);
+  }, [resetKey]);
+
+  const trimmed = reason.trim();
+  const reasonMissing = rejectRequiresReason && trimmed.length === 0 && !extraReasonSatisfied;
+
+  function submitRevision() {
+    setAttempted(true);
+    if (!canReject || reasonMissing) return;
+    onReject(composeReason ? composeReason(reason) : trimmed || undefined);
+  }
+
+  return (
+    <div className="space-y-3">
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-end gap-2",
+          primaryActionOnRight && "flex-row-reverse justify-start",
+        )}
+      >
+        <Button
+          size="sm"
+          variant={revising ? "outline" : approveVariant}
+          disabled={!canApprove || working !== null || approveDisabled}
+          onClick={onApprove}
+        >
+          {working === "accept" ? (
+            <>
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+              Approving…
+            </>
+          ) : (
+            approveLabel
+          )}
+        </Button>
+        {allowRevise ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!canReject || working !== null}
+            onClick={() => {
+              setAttempted(false);
+              setRevising((current) => !current);
+            }}
+          >
+            {reviseLabel}
+          </Button>
+        ) : null}
+        {!rejectRequiresReason ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={!canReject || working !== null}
+            onClick={() => onReject(undefined)}
+          >
+            {working === "reject" && !revising ? (
+              <>
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                Rejecting…
+              </>
+            ) : (
+              rejectLabel
+            )}
+          </Button>
+        ) : null}
+      </div>
+
+      {revising ? (
+        <div className="space-y-3 rounded-sm border border-border/70 bg-background/75 p-3">
+          <Textarea
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder={reasonPlaceholder}
+            aria-invalid={attempted && reasonMissing}
+            className={cn(
+              "min-h-24 bg-background text-sm",
+              attempted && reasonMissing && "border-rose-500 focus-visible:ring-rose-500/25",
+            )}
+          />
+          {attempted && reasonMissing ? (
+            <p className="text-xs text-destructive">Add a note describing the changes you want.</p>
+          ) : null}
+          {revisePanelChildren}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={working !== null}
+              onClick={() => {
+                setRevising(false);
+                setAttempted(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!canReject || working !== null}
+              onClick={submitRevision}
+            >
+              {working === "reject" ? (
+                <>
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Sending…
+                </>
+              ) : (
+                "Send revision"
+              )}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {actionError ? (
+        <div className="rounded-sm border border-destructive/60 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {actionError}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function RequestConfirmationCard({
   interaction,
   isPlan = false,
@@ -1944,37 +2142,28 @@ function RequestConfirmationCard({
   onUploadImage?: (file: File) => Promise<string>;
   externalReferences?: MarkdownExternalReferenceMap;
 }) {
-  const [rejecting, setRejecting] = useState(false);
   const [working, setWorking] = useState<"accept" | "reject" | null>(null);
-  const [rejectReason, setRejectReason] = useState(interaction.result?.reason ?? "");
-  const [rejectAttempted, setRejectAttempted] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [shots, setShots] = useState<{ name: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  // Screenshots ride along in the decline reason as markdown image refs so the
+  // Screenshots ride along in the revise note as markdown image refs so the
   // board can attach images when sending a plan back — no schema change needed.
   const allowScreenshots = isPlan && Boolean(onUploadImage);
   const rejectRequiresReason = interaction.payload.rejectRequiresReason === true;
-  const allowDeclineReason = interaction.payload.allowDeclineReason !== false;
-  const trimmedRejectReason = rejectReason.trim();
-  const canReject = !rejectRequiresReason || trimmedRejectReason.length > 0 || shots.length > 0;
-  const declineReasonInvalid = rejectRequiresReason && !canReject;
-  const declineReasonPlaceholder =
+  const allowRevise = interaction.payload.allowDeclineReason !== false;
+  const reasonPlaceholder =
     interaction.payload.declineReasonPlaceholder
     ?? (interaction.payload.acceptLabel === "Approve plan"
       ? "Optional: what would you like revised?"
       : "Optional: tell the agent what you'd change.");
 
   useEffect(() => {
-    setRejectReason(interaction.result?.reason ?? "");
-    setRejectAttempted(false);
     setActionError(null);
     setShots([]);
     setUploadError(null);
     if (interaction.status !== "pending") {
-      setRejecting(false);
       setWorking(null);
     }
   }, [interaction.id, interaction.result?.reason, interaction.status]);
@@ -1998,11 +2187,11 @@ function RequestConfirmationCard({
     }
   }
 
-  function composeReason() {
-    const text = trimmedRejectReason;
-    if (shots.length === 0) return text || undefined;
+  function composeReason(text: string) {
+    const trimmed = text.trim();
+    if (shots.length === 0) return trimmed || undefined;
     const images = shots.map((s) => `![${s.name}](${s.url})`).join("\n");
-    return [text, images].filter(Boolean).join("\n\n");
+    return [trimmed, images].filter(Boolean).join("\n\n");
   }
 
   async function handleAccept() {
@@ -2018,14 +2207,12 @@ function RequestConfirmationCard({
     }
   }
 
-  async function handleReject() {
-    setRejectAttempted(true);
-    if (!onRejectInteraction || !canReject) return;
+  async function handleReject(reason: string | undefined) {
+    if (!onRejectInteraction) return;
     setWorking("reject");
     setActionError(null);
     try {
-      await onRejectInteraction(interaction, composeReason());
-      setRejecting(false);
+      await onRejectInteraction(interaction, reason);
     } catch {
       setActionError("Try again");
     } finally {
@@ -2053,161 +2240,89 @@ function RequestConfirmationCard({
       ) : null}
 
       {interaction.status === "pending" ? (
-        <div className="space-y-3">
-          <div
-            className={cn(
-              "flex flex-wrap items-center justify-end gap-2",
-              primaryActionOnRight && "flex-row-reverse justify-start",
-            )}
-          >
-            <Button
-              size="sm"
-              variant={rejecting ? "outline" : isPlan ? "cta" : "default"}
-              disabled={!onAcceptInteraction || working !== null}
-              onClick={() => void handleAccept()}
-            >
-              {working === "accept" ? (
-                <>
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  Confirming...
-                </>
-              ) : (
-                interaction.payload.acceptLabel ?? "Confirm"
-              )}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!onRejectInteraction || working !== null}
-              onClick={() => {
-                if (!allowDeclineReason) {
-                  void handleReject();
-                  return;
-                }
-                setRejectAttempted(false);
-                setRejecting((current) => !current);
-              }}
-            >
-              {interaction.payload.rejectLabel ?? "Decline"}
-            </Button>
-          </div>
-
-          {rejecting ? (
-            <div className="space-y-3 rounded-sm border border-border/70 bg-background/75 p-3">
-              <Textarea
-                value={rejectReason}
-                onChange={(event) => setRejectReason(event.target.value)}
-                placeholder={declineReasonPlaceholder}
-                aria-invalid={rejectAttempted && declineReasonInvalid}
-                className={cn(
-                  "min-h-24 bg-background text-sm",
-                  rejectAttempted && declineReasonInvalid
-                    && "border-rose-500 focus-visible:ring-rose-500/25",
-                )}
-              />
-              {rejectAttempted && declineReasonInvalid ? (
-                <p className="text-xs text-destructive">A decline reason is required.</p>
-              ) : null}
-              {allowScreenshots ? (
-                <div className="space-y-2">
-                  {shots.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {shots.map((shot, index) => (
-                        <div
-                          key={`${shot.url}-${index}`}
-                          className="group relative h-16 w-16 overflow-hidden rounded-sm border border-border/70"
+        <ConfirmationActionRow
+          resetKey={`${interaction.id}:${interaction.status}`}
+          approveLabel={interaction.payload.acceptLabel ?? CONFIRMATION_APPROVE_LABEL}
+          rejectLabel={interaction.payload.rejectLabel ?? CONFIRMATION_REJECT_LABEL}
+          approveVariant={isPlan ? "cta" : "default"}
+          primaryActionOnRight={primaryActionOnRight}
+          allowRevise={allowRevise}
+          rejectRequiresReason={rejectRequiresReason}
+          reasonPlaceholder={reasonPlaceholder}
+          working={working}
+          actionError={actionError}
+          canApprove={Boolean(onAcceptInteraction)}
+          canReject={Boolean(onRejectInteraction)}
+          onApprove={() => void handleAccept()}
+          onReject={(reason) => void handleReject(reason)}
+          composeReason={composeReason}
+          extraReasonSatisfied={shots.length > 0}
+          revisePanelChildren={
+            allowScreenshots ? (
+              <div className="space-y-2">
+                {shots.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {shots.map((shot, index) => (
+                      <div
+                        key={`${shot.url}-${index}`}
+                        className="group relative h-16 w-16 overflow-hidden rounded-sm border border-border/70"
+                      >
+                        <img
+                          src={shot.url}
+                          alt={shot.name}
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          aria-label={`Remove ${shot.name}`}
+                          className="absolute right-0.5 top-0.5 rounded-full bg-background/90 p-0.5 text-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                          onClick={() =>
+                            setShots((current) => current.filter((_, i) => i !== index))
+                          }
                         >
-                          <img
-                            src={shot.url}
-                            alt={shot.name}
-                            className="h-full w-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            aria-label={`Remove ${shot.name}`}
-                            className="absolute right-0.5 top-0.5 rounded-full bg-background/90 p-0.5 text-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                            onClick={() =>
-                              setShots((current) => current.filter((_, i) => i !== index))
-                            }
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(event) => {
-                      void handleAddScreenshots(event.target.value ? event.target.files : null);
-                      event.target.value = "";
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={working !== null || uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <ImagePlus className="mr-2 h-3.5 w-3.5" />
-                        Attach screenshots
-                      </>
-                    )}
-                  </Button>
-                  {uploadError ? (
-                    <p className="text-xs text-destructive">{uploadError}</p>
-                  ) : null}
-                </div>
-              ) : null}
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={working !== null}
-                  onClick={() => {
-                    setRejecting(false);
-                    setRejectAttempted(false);
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(event) => {
+                    void handleAddScreenshots(event.target.value ? event.target.files : null);
+                    event.target.value = "";
                   }}
-                >
-                  Cancel decline
-                </Button>
+                />
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
-                  disabled={!onRejectInteraction || working !== null}
-                  onClick={() => void handleReject()}
+                  disabled={working !== null || uploading}
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  {working === "reject" ? (
+                  {uploading ? (
                     <>
                       <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                      Saving...
+                      Uploading...
                     </>
                   ) : (
-                    interaction.payload.rejectLabel ?? "Decline"
+                    <>
+                      <ImagePlus className="mr-2 h-3.5 w-3.5" />
+                      Attach screenshots
+                    </>
                   )}
                 </Button>
+                {uploadError ? (
+                  <p className="text-xs text-destructive">{uploadError}</p>
+                ) : null}
               </div>
-            </div>
-          ) : null}
-
-          {actionError ? (
-            <div className="rounded-sm border border-destructive/60 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {actionError}
-            </div>
-          ) : null}
-        </div>
+            ) : null
+          }
+        />
       ) : (
         <RequestConfirmationResolution interaction={interaction} />
       )}
@@ -2337,11 +2452,13 @@ function CheckboxOptionRow({
 
 function RequestCheckboxConfirmationCard({
   interaction,
+  primaryActionOnRight = false,
   onAcceptInteraction,
   onRejectInteraction,
   externalReferences,
 }: {
   interaction: RequestCheckboxConfirmationInteraction;
+  primaryActionOnRight?: boolean;
   onAcceptInteraction?: (
     interaction: RequestCheckboxConfirmationInteraction,
     selectedClientKeys: undefined,
@@ -2368,10 +2485,7 @@ function RequestCheckboxConfirmationCard({
   );
 
   const [selectedOptionIds, setSelectedOptionIds] = useState<Set<string>>(() => new Set(defaultSelected));
-  const [rejecting, setRejecting] = useState(false);
   const [working, setWorking] = useState<"accept" | "reject" | null>(null);
-  const [rejectReason, setRejectReason] = useState(interaction.result?.reason ?? "");
-  const [rejectAttempted, setRejectAttempted] = useState(false);
   const [acceptAttempted, setAcceptAttempted] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -2379,22 +2493,16 @@ function RequestCheckboxConfirmationCard({
 
   useEffect(() => {
     setSelectedOptionIds(new Set(defaultSelected));
-    setRejectReason(interaction.result?.reason ?? "");
-    setRejectAttempted(false);
     setAcceptAttempted(false);
     setActionError(null);
     if (interaction.status !== "pending") {
-      setRejecting(false);
       setWorking(null);
     }
   }, [interaction.id, interaction.status, interaction.result?.reason, defaultSelected, optionSeed]);
 
   const rejectRequiresReason = interaction.payload.rejectRequiresReason === true;
-  const allowDeclineReason = interaction.payload.allowDeclineReason !== false;
-  const trimmedRejectReason = rejectReason.trim();
-  const canReject = !rejectRequiresReason || trimmedRejectReason.length > 0;
-  const declineReasonInvalid = rejectRequiresReason && !canReject;
-  const declineReasonPlaceholder =
+  const allowRevise = interaction.payload.allowDeclineReason !== false;
+  const reasonPlaceholder =
     interaction.payload.declineReasonPlaceholder ?? "Optional: tell the agent what you'd change.";
 
   const selectedCount = selectedOptionIds.size;
@@ -2449,14 +2557,12 @@ function RequestCheckboxConfirmationCard({
     }
   }
 
-  async function handleReject() {
-    setRejectAttempted(true);
-    if (!onRejectInteraction || !canReject) return;
+  async function handleReject(reason: string | undefined) {
+    if (!onRejectInteraction) return;
     setWorking("reject");
     setActionError(null);
     try {
-      await onRejectInteraction(interaction, trimmedRejectReason || undefined);
-      setRejecting(false);
+      await onRejectInteraction(interaction, reason);
     } catch {
       setActionError("Try again");
     } finally {
@@ -2547,91 +2653,21 @@ function RequestCheckboxConfirmationCard({
           <p className="text-xs text-destructive">{validationMessage}</p>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            size="sm"
-            variant={rejecting ? "outline" : "default"}
-            disabled={!onAcceptInteraction || working !== null}
-            onClick={() => void handleAccept()}
-          >
-            {working === "accept" ? (
-              <>
-                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                Confirming...
-              </>
-            ) : (
-              interaction.payload.acceptLabel ?? "Confirm selected"
-            )}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!onRejectInteraction || working !== null}
-            onClick={() => {
-              if (!allowDeclineReason) {
-                void handleReject();
-                return;
-              }
-              setRejectAttempted(false);
-              setRejecting((current) => !current);
-            }}
-          >
-            {interaction.payload.rejectLabel ?? "Request changes"}
-          </Button>
-        </div>
-
-        {rejecting ? (
-          <div className="space-y-3 rounded-sm border border-border/70 bg-background/75 p-3">
-            <Textarea
-              value={rejectReason}
-              onChange={(event) => setRejectReason(event.target.value)}
-              placeholder={declineReasonPlaceholder}
-              aria-invalid={rejectAttempted && declineReasonInvalid}
-              className={cn(
-                "min-h-24 bg-background text-sm",
-                rejectAttempted && declineReasonInvalid
-                  && "border-rose-500 focus-visible:ring-rose-500/25",
-              )}
-            />
-            {rejectAttempted && declineReasonInvalid ? (
-              <p className="text-xs text-destructive">A reason is required.</p>
-            ) : null}
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={working !== null}
-                onClick={() => {
-                  setRejecting(false);
-                  setRejectAttempted(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!onRejectInteraction || working !== null}
-                onClick={() => void handleReject()}
-              >
-                {working === "reject" ? (
-                  <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  interaction.payload.rejectLabel ?? "Request changes"
-                )}
-              </Button>
-            </div>
-          </div>
-        ) : null}
-
-        {actionError ? (
-          <div className="rounded-sm border border-destructive/60 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {actionError}
-          </div>
-        ) : null}
+        <ConfirmationActionRow
+          resetKey={`${interaction.id}:${interaction.status}`}
+          approveLabel={interaction.payload.acceptLabel ?? CONFIRMATION_APPROVE_LABEL}
+          rejectLabel={interaction.payload.rejectLabel ?? CONFIRMATION_REJECT_LABEL}
+          primaryActionOnRight={primaryActionOnRight}
+          allowRevise={allowRevise}
+          rejectRequiresReason={rejectRequiresReason}
+          reasonPlaceholder={reasonPlaceholder}
+          working={working}
+          actionError={actionError}
+          canApprove={Boolean(onAcceptInteraction)}
+          canReject={Boolean(onRejectInteraction)}
+          onApprove={() => void handleAccept()}
+          onReject={(reason) => void handleReject(reason)}
+        />
       </div>
     </div>
   );
@@ -3319,6 +3355,7 @@ export function IssueThreadInteractionCard({
         ) : interaction.kind === "request_checkbox_confirmation" ? (
           <RequestCheckboxConfirmationCard
             interaction={interaction}
+            primaryActionOnRight={primaryActionOnRight}
             onAcceptInteraction={onAcceptInteraction}
             onRejectInteraction={onRejectInteraction}
             externalReferences={externalReferences}

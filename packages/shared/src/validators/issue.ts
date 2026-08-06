@@ -770,6 +770,12 @@ export const askUserQuestionsQuestionOptionSchema = z.object({
   id: z.string().trim().min(1).max(120),
   label: z.string().trim().min(1).max(120),
   description: z.string().trim().max(500).nullable().optional(),
+  freeText: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, selecting this option reveals an inline text field; the typed value is returned as the question's otherText. Use this for a real \"I'll describe it\" choice instead of authoring a dead option that does nothing. At most one free-text option per question.",
+    ),
 });
 
 export const askUserQuestionsQuestionSchema = z.object({
@@ -800,6 +806,7 @@ export const askUserQuestionsPayloadSchema = z.object({
     seenQuestionIds.add(question.id);
 
     const seenOptionIds = new Set<string>();
+    let freeTextOptionCount = 0;
     for (const [optionIndex, option] of question.options.entries()) {
       if (seenOptionIds.has(option.id)) {
         ctx.addIssue({
@@ -809,6 +816,16 @@ export const askUserQuestionsPayloadSchema = z.object({
         });
       }
       seenOptionIds.add(option.id);
+      if (option.freeText) {
+        freeTextOptionCount += 1;
+        if (freeTextOptionCount > 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "A question may declare at most one free-text option",
+            path: ["questions", questionIndex, "options", optionIndex, "freeText"],
+          });
+        }
+      }
     }
   }
 });

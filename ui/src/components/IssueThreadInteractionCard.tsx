@@ -989,8 +989,16 @@ function AskUserQuestionsCard({
       ),
   );
 
-  function toggleOption(questionId: string, optionId: string, selectionMode: "single" | "multi") {
-    if (optionId === OTHER_ANSWER_ID) {
+  function toggleOption(
+    questionId: string,
+    optionId: string,
+    selectionMode: "single" | "multi",
+    isFreeText = false,
+  ) {
+    // A free-text option is a first-class version of the built-in "Other"
+    // affordance: selecting it reveals the inline text field and its typed
+    // value is submitted as the question's `otherText`.
+    if (optionId === OTHER_ANSWER_ID || isFreeText) {
       setOtherActiveQuestions((current) => ({
         ...current,
         [questionId]: !current[questionId],
@@ -1064,7 +1072,11 @@ function AskUserQuestionsCard({
 
       {interaction.status === "pending" ? (
         <div className="space-y-4">
-          {questions.map((question, index) => (
+          {questions.map((question, index) => {
+            const hasFreeTextOption = question.options.some(
+              (option) => option.freeText === true,
+            );
+            return (
             <div
               key={question.id}
               className="rounded-2xl border border-border/70 bg-background/82 p-4 shadow-(--shadow-extract-9)"
@@ -1099,50 +1111,82 @@ function AskUserQuestionsCard({
                   role={question.selectionMode === "single" ? "radiogroup" : "group"}
                   aria-labelledby={`${interaction.id}-${question.id}-prompt`}
                 >
-                  {question.options.map((option) => (
-                    <QuestionOptionButton
-                      key={option.id}
-                      id={`${interaction.id}-${question.id}-${option.id}`}
-                      label={option.label}
-                      description={option.description}
-                      selected={(draftAnswers[question.id] ?? []).includes(option.id)}
-                      selectionMode={question.selectionMode}
-                      onClick={() =>
-                        toggleOption(question.id, option.id, question.selectionMode)}
-                    />
-                  ))}
+                  {question.options.map((option) => {
+                    const isFreeText = option.freeText === true;
+                    const optionSelected = isFreeText
+                      ? otherActiveQuestions[question.id] === true
+                      : (draftAnswers[question.id] ?? []).includes(option.id);
+                    return (
+                      <div key={option.id} className="space-y-2">
+                        <QuestionOptionButton
+                          id={`${interaction.id}-${question.id}-${option.id}`}
+                          label={option.label}
+                          description={option.description}
+                          selected={optionSelected}
+                          selectionMode={question.selectionMode}
+                          onClick={() =>
+                            toggleOption(question.id, option.id, question.selectionMode, isFreeText)}
+                        />
+                        {isFreeText && optionSelected ? (
+                          <Textarea
+                            aria-label={`Describe your answer for ${question.prompt}`}
+                            value={draftOtherAnswers[question.id] ?? ""}
+                            onChange={(event) =>
+                              setDraftOtherAnswers((current) => ({
+                                ...current,
+                                [question.id]: event.target.value,
+                              }))}
+                            placeholder="Type your answer"
+                            className="min-h-24 bg-background text-sm"
+                            autoFocus
+                          />
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
-                <button
-                  type="button"
-                  id={`${interaction.id}-${question.id}-other`}
-                  aria-expanded={otherActiveQuestions[question.id] === true}
-                  className={cn(
-                    "text-sm font-medium underline underline-offset-4 transition-colors outline-none focus-visible:ring-(length:--rad-3) focus-visible:ring-ring/50",
-                    otherActiveQuestions[question.id]
-                      ? "text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  onClick={() =>
-                    toggleOption(question.id, OTHER_ANSWER_ID, question.selectionMode)}
-                >
-                  Other
-                </button>
-                {otherActiveQuestions[question.id] ? (
-                  <Textarea
-                    aria-label={`Other answer for ${question.prompt}`}
-                    value={draftOtherAnswers[question.id] ?? ""}
-                    onChange={(event) =>
-                      setDraftOtherAnswers((current) => ({
-                        ...current,
-                        [question.id]: event.target.value,
-                      }))}
-                    placeholder="Type your answer"
-                    className="min-h-24 bg-background text-sm"
-                  />
-                ) : null}
+                {/*
+                 * The built-in "Other" link is the fallback free-text affordance.
+                 * Suppress it when the agent already authored a first-class
+                 * free-text option so the card never shows two ways to type an
+                 * answer (PAP-419).
+                 */}
+                {hasFreeTextOption ? null : (
+                  <>
+                    <button
+                      type="button"
+                      id={`${interaction.id}-${question.id}-other`}
+                      aria-expanded={otherActiveQuestions[question.id] === true}
+                      className={cn(
+                        "text-sm font-medium underline underline-offset-4 transition-colors outline-none focus-visible:ring-(length:--rad-3) focus-visible:ring-ring/50",
+                        otherActiveQuestions[question.id]
+                          ? "text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() =>
+                        toggleOption(question.id, OTHER_ANSWER_ID, question.selectionMode)}
+                    >
+                      Other
+                    </button>
+                    {otherActiveQuestions[question.id] ? (
+                      <Textarea
+                        aria-label={`Other answer for ${question.prompt}`}
+                        value={draftOtherAnswers[question.id] ?? ""}
+                        onChange={(event) =>
+                          setDraftOtherAnswers((current) => ({
+                            ...current,
+                            [question.id]: event.target.value,
+                          }))}
+                        placeholder="Type your answer"
+                        className="min-h-24 bg-background text-sm"
+                      />
+                    ) : null}
+                  </>
+                )}
               </div>
             </div>
-          ))}
+            );
+          })}
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/75 p-4">
             <div className="text-sm text-muted-foreground">

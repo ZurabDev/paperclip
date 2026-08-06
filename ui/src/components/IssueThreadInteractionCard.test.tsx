@@ -9,6 +9,7 @@ import { ThemeProvider } from "../context/ThemeContext";
 import { TooltipProvider } from "./ui/tooltip";
 import {
   pendingAskUserQuestionsInteraction,
+  pendingAskUserQuestionsWithFreeTextOption,
   commentExpiredAskUserQuestionsInteraction,
   commentExpiredRequestConfirmationInteraction,
   declinedToolActionInteraction,
@@ -180,6 +181,63 @@ describe("IssueThreadInteractionCard", () => {
         {
           questionId: "post-submit-summary",
           optionIds: ["answers-inline"],
+        },
+      ],
+    );
+  });
+
+  it("reveals an inline field when a free-text option is selected and hides the standalone Other link", async () => {
+    const onSubmitInteractionAnswers = vi.fn(async () => undefined);
+    const host = renderCard({
+      interaction: pendingAskUserQuestionsWithFreeTextOption,
+      onSubmitInteractionAnswers,
+    });
+
+    // A first-class free-text option suppresses the built-in "Other" link.
+    const otherLink = Array.from(host.querySelectorAll("button")).find(
+      (button) => button.textContent === "Other",
+    );
+    expect(otherLink).toBeUndefined();
+
+    // No text field until the free-text option is selected.
+    expect(host.querySelector("textarea")).toBeNull();
+
+    const describeOption = Array.from(host.querySelectorAll('[role="radio"]')).find(
+      (button) => button.textContent?.includes("I'll describe it"),
+    ) as HTMLButtonElement | undefined;
+    expect(describeOption).toBeTruthy();
+
+    await act(async () => {
+      describeOption?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(describeOption?.getAttribute("aria-checked")).toBe("true");
+    const textarea = host.querySelector("textarea") as HTMLTextAreaElement | null;
+    expect(textarea).toBeTruthy();
+
+    await act(async () => {
+      const valueSetter = Object.getOwnPropertyDescriptor(
+        HTMLTextAreaElement.prototype,
+        "value",
+      )?.set;
+      valueSetter?.call(textarea, "Call it Threads");
+      textarea!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    const submitButton = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Send answers"),
+    );
+    await act(async () => {
+      submitButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(onSubmitInteractionAnswers).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "ask_user_questions" }),
+      [
+        {
+          questionId: "surface-name",
+          optionIds: [],
+          otherText: "Call it Threads",
         },
       ],
     );

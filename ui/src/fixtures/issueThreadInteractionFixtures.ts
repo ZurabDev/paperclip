@@ -358,6 +358,45 @@ export const rejectedSuggestedTasksInteraction = createSuggestTasksInteraction({
 
 export const pendingAskUserQuestionsInteraction = createAskUserQuestionsInteraction({});
 
+/**
+ * A pending question whose last option is a first-class free-text choice
+ * (`freeText: true`). Selecting it reveals an inline text field instead of
+ * acting as a dead radio, and the built-in "Other" link is suppressed
+ * (PAP-419).
+ */
+export const pendingAskUserQuestionsWithFreeTextOption = createAskUserQuestionsInteraction({
+  id: "interaction-questions-freetext",
+  payload: {
+    version: 1,
+    title: "How should we name the new surface?",
+    submitLabel: "Send answers",
+    questions: [
+      {
+        id: "surface-name",
+        prompt: "What should we call the new surface?",
+        selectionMode: "single",
+        required: true,
+        options: [
+          {
+            id: "keep-tasks",
+            label: "Keep calling it Tasks",
+          },
+          {
+            id: "rename-work",
+            label: "Rename it Work",
+          },
+          {
+            id: "describe-it",
+            label: "I'll describe it",
+            description: "Tell us the exact name you have in mind.",
+            freeText: true,
+          },
+        ],
+      },
+    ],
+  },
+});
+
 export const answeredAskUserQuestionsInteraction = createAskUserQuestionsInteraction({
   id: "interaction-questions-answered",
   status: "answered",

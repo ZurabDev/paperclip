@@ -23,6 +23,10 @@ import type {
   TaskChatTurnItem,
 } from "@/components/task-chat/task-chat-model";
 import { TaskChatInteractionCard } from "@/components/task-chat/TaskChatInteractionCard";
+import {
+  interactionThreadAnchorMs,
+  isSuppressedThreadInteraction,
+} from "@/components/task-chat/interaction-thread-order";
 import { TaskChatBubbleActions } from "@/components/task-chat/TaskChatBubbleActions";
 import type { FeedbackVoteValue } from "@paperclipai/shared";
 import { TaskChatThreadView, taskChatContentKey } from "@/components/task-chat/TaskChatThreadView";
@@ -229,6 +233,10 @@ export function TaskChatThread(props: TaskChatThreadProps) {
       entries.push({ ms: toMs(comment.createdAt), order: 1, id: item.id, item });
     });
     for (const interaction of interactions ?? []) {
+      // Withdrawn/superseded confirmations are retracted calls to action — drop
+      // them so a dead card never stacks above the one that replaced it
+      // (PAP-416).
+      if (isSuppressedThreadInteraction(interaction)) continue;
       const createdAtMs = toMs(interaction.createdAt);
       const handoffAtMs =
         interaction.kind === "request_confirmation" && interaction.sourceRunId
@@ -243,7 +251,10 @@ export function TaskChatThread(props: TaskChatThreadProps) {
           : null;
       const id = `interaction:${interaction.id}`;
       entries.push({
-        ms: handoffAtMs ?? createdAtMs,
+        // A resolved card settles at its resolution time so it never reads
+        // above a message written before the user answered (PAP-416); pending
+        // cards keep the request-time (handoff/createdAt) slot.
+        ms: interactionThreadAnchorMs(interaction, handoffAtMs ?? createdAtMs),
         order: 2,
         id,
         item: { id, kind: "interaction", interaction },

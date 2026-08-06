@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const AGENT_NAME = "Chief of staff";
-const TASK_TITLE = "Hire your first engineer and create a hiring plan";
+const TASK_TITLE = "Get started: understand my goals and propose a plan";
 
 test("captures planning mode UI for desktop and mobile", async ({ page }) => {
   const timestamp = Date.now();

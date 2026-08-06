@@ -10,7 +10,7 @@ import { test, expect } from "@playwright/test";
 
 const COMPANY_NAME = `E2E-TypingIntro-${Date.now()}`;
 const MISSION = "Verify the dashboard launch survives the wizard handoff.";
-const FIRST_TASK_TITLE = "Hire your first engineer and create a hiring plan";
+const FIRST_TASK_TITLE = "Get started: understand my goals and propose a plan";
 
 test.describe("Dashboard launch after onboarding wizard", () => {
   test("creates the first task and opens the dashboard", async ({

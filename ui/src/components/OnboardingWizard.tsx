@@ -82,12 +82,24 @@ function buildMissionFromQuestionnaire(q1: string, q2: string, q3: string, q4: s
 }
 
 const ONBOARDING_STORAGE_KEY = "paperclip-onboarding-state";
-const DEFAULT_TASK_TITLE = "Hire your first engineer and create a hiring plan";
-const DEFAULT_TASK_DESCRIPTION = `You are the CEO. You set the direction for the company.
+const DEFAULT_TASK_TITLE = "Get started: understand my goals and propose a plan";
+const DEFAULT_TASK_DESCRIPTION = `You are the Paperclip agent. This is your first task. Your job here is to
+understand what the user wants and turn it into a concrete plan — not to
+start building yet.
 
-- hire a founding engineer
-- write a hiring plan
-- break the roadmap into concrete tasks and start delegating work`;
+Work in this order:
+
+1. Welcome the user, and briefly reflect back what you already know from onboarding.
+
+2. Ask a few focused, clarifying questions. Use an ask_user_questions interaction to settle on one concrete goal to tackle first— scope, priorities, constraints, and what "done" looks like. Don't guess; ask.
+
+3. Propose a plan and a team. Once you understand the goal, present a short approach plan plus the agents (and their roles and responsibilities) you'd hire to do the work. Offer it as suggest_tasks + request_confirmation so the user can revise before anything happens.
+
+4. Wait for approval. Don't hire anyone or create work until the user accepts. Let the user know what the options for next steps on this task are. If they ask for changes, revise and re-confirm.
+
+5. On approval, execute. Hire the proposed agents and create + delegate the concrete tasks, each in its own task.
+
+Propose, don't decide. Keep it conversational.`;
 const INCOMPLETE_ONBOARDING_STATE_MESSAGE =
   "Onboarding state is incomplete. Please restart onboarding and try again.";
 

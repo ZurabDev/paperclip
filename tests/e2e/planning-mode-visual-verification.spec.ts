@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+  expectLandsOnFirstTaskWithoutDashboardBounce,
+  instrumentNavLog,
+} from "./helpers/onboarding-landing";
 
 const AGENT_NAME = "Chief of staff";
 const TASK_TITLE = "Paperclip onboarding";
@@ -7,6 +11,8 @@ test("captures planning mode UI for desktop and mobile", async ({ page }) => {
   const timestamp = Date.now();
   const companyName = `PAP-3413-${timestamp}`;
   const screenshotDir = "test-results/planning-mode";
+
+  await instrumentNavLog(page);
 
   await page.route("**/test-environment", (route) =>
     route.fulfill({
@@ -66,8 +72,9 @@ test("captures planning mode UI for desktop and mobile", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "Review" })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: /Get started/ }).click();
-  // The wizard now drops the user straight onto the first task's detail page.
-  await expect(page).toHaveURL(/\/issues\/[^/]+$/, { timeout: 30_000 });
+  // The wizard now drops the user straight onto the first task's detail page,
+  // and must not bounce through the dashboard (PAP-404).
+  await expectLandsOnFirstTaskWithoutDashboardBounce(page);
 
   const baseOrigin = new URL(page.url()).origin;
   const companyRes = await page.request.get(`${baseOrigin}/api/companies`);

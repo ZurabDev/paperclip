@@ -15,6 +15,28 @@ describe("buildOnboardingGreeting", () => {
     expect(greeting).toContain("few focused questions");
   });
 
+  it("introduces the agent by the name the user chose in onboarding", () => {
+    const greeting = buildOnboardingGreeting({
+      agentName: "Chief of staff",
+      teamName: "Acme",
+      goals: null,
+    });
+
+    expect(greeting).toContain("Welcome — I'm Chief of staff for Acme.");
+    expect(greeting).not.toContain("Paperclip agent");
+  });
+
+  it("uses the agent name without a team when the team name is missing", () => {
+    const greeting = buildOnboardingGreeting({
+      agentName: "Chief of staff",
+      teamName: null,
+      goals: null,
+    });
+
+    expect(greeting).toContain("Welcome — I'm Chief of staff.");
+    expect(greeting).not.toContain("Paperclip agent");
+  });
+
   it("collapses whitespace in the reflected goals", () => {
     const greeting = buildOnboardingGreeting({
       teamName: "Acme",

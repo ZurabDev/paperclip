@@ -7867,11 +7867,13 @@ export function issueRoutes(
     // best-effort: a greeting failure must not fail issue creation.
     if (isOnboardingFirstTask && issue.assigneeAgentId) {
       try {
-        const [company, goal] = await Promise.all([
+        const [company, goal, assigneeAgent] = await Promise.all([
           companiesSvc.getById(companyId),
           createBody.goalId ? goalsSvc.getById(createBody.goalId) : Promise.resolve(null),
+          agentsSvc.getById(issue.assigneeAgentId),
         ]);
         const greetingBody = buildOnboardingGreeting({
+          agentName: assigneeAgent?.name ?? null,
           teamName: company?.name ?? null,
           goals: goal?.description ?? goal?.title ?? null,
         });

@@ -6,17 +6,22 @@
 export const ONBOARDING_GREETING_AUTHORIZATION_REASON = "onboarding first-task greeting";
 
 export function buildOnboardingGreeting(input: {
+  agentName?: string | null;
   teamName?: string | null;
   goals?: string | null;
 }): string {
+  const agentName = input.agentName?.trim();
   const teamName = input.teamName?.trim();
   const goals = input.goals?.replace(/\s+/g, " ").trim();
 
+  // Introduce the agent by the name the user chose in onboarding when we have
+  // it, so the first message reads as coming from *their* agent rather than a
+  // generic "Paperclip agent". Fall back to the generic phrasing otherwise.
+  const identity = agentName ? `I'm ${agentName}` : "I'm your Paperclip agent";
+
   const lines: string[] = [];
   lines.push(
-    teamName
-      ? `Welcome — I'm your Paperclip agent for ${teamName}.`
-      : "Welcome — I'm your Paperclip agent.",
+    teamName ? `Welcome — ${identity} for ${teamName}.` : `Welcome — ${identity}.`,
   );
 
   if (goals) {

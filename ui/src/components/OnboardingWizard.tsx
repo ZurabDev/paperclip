@@ -452,7 +452,8 @@ export function OnboardingWizard() {
         setCreatedProjectId(projectId);
       }
 
-      if (!createdIssueRef) {
+      let issueRef = createdIssueRef;
+      if (!issueRef) {
         const issue = await issuesApi.create(
           createdCompanyId,
           buildOnboardingIssuePayload({
@@ -463,7 +464,8 @@ export function OnboardingWizard() {
             goalId
           })
         );
-        setCreatedIssueRef(issue.identifier ?? issue.id);
+        issueRef = issue.identifier ?? issue.id;
+        setCreatedIssueRef(issueRef);
         queryClient.invalidateQueries({
           queryKey: queryKeys.issues.list(createdCompanyId)
         });
@@ -473,7 +475,9 @@ export function OnboardingWizard() {
       setSelectedCompanyId(createdCompanyId);
       reset();
       closeOnboarding();
-      navigate(prefix ? `/${prefix}/dashboard` : "/dashboard");
+      // Drop the user straight into the first task's detail page (not the
+      // dashboard) so they land on the conversation the agent will start in.
+      navigate(prefix ? `/${prefix}/issues/${issueRef}` : `/issues/${issueRef}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to launch first task");
     } finally {
@@ -1631,7 +1635,7 @@ export function OnboardingWizard() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground text-center">
-                    We'll create the first task for {agentName} and take you to the dashboard.
+                    We'll create the first task for {agentName} and open it so you can get started.
                   </p>
                 </div>
               )}

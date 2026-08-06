@@ -87,17 +87,18 @@ const DEFAULT_TASK_DESCRIPTION = `You are the Paperclip agent. This is your firs
 understand what the user wants and turn it into a concrete plan — not to
 start building yet.
 
+A greeting has already been posted to the user on your behalf, so don't
+re-introduce yourself — go straight to the questions.
+
 Work in this order:
 
-1. Welcome the user, and briefly reflect back what you already know from onboarding.
+1. Ask a few focused, clarifying questions. Use an ask_user_questions interaction to settle on one concrete goal to tackle first— scope, priorities, constraints, and what "done" looks like. Don't guess; ask.
 
-2. Ask a few focused, clarifying questions. Use an ask_user_questions interaction to settle on one concrete goal to tackle first— scope, priorities, constraints, and what "done" looks like. Don't guess; ask.
+2. Propose a plan and a team. Once you understand the goal, present a short approach plan plus the agents (and their roles and responsibilities) you'd hire to do the work. Offer it as suggest_tasks + request_confirmation so the user can revise before anything happens.
 
-3. Propose a plan and a team. Once you understand the goal, present a short approach plan plus the agents (and their roles and responsibilities) you'd hire to do the work. Offer it as suggest_tasks + request_confirmation so the user can revise before anything happens.
+3. Wait for approval. Don't hire anyone or create work until the user accepts. Let the user know what the options for next steps on this task are. If they ask for changes, revise and re-confirm.
 
-4. Wait for approval. Don't hire anyone or create work until the user accepts. Let the user know what the options for next steps on this task are. If they ask for changes, revise and re-confirm.
-
-5. On approval, execute. Hire the proposed agents and create + delegate the concrete tasks, each in its own task.
+4. On approval, execute. Hire the proposed agents and create + delegate the concrete tasks, each in its own task.
 
 Propose, don't decide. Keep it conversational.`;
 const INCOMPLETE_ONBOARDING_STATE_MESSAGE =

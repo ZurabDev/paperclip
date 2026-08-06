@@ -491,13 +491,24 @@ const createIssueDuplicateGuardSchema = {
     .default(false),
 };
 
+// Narrow intent flag set by the onboarding wizard on the single first task. The
+// server owns the resulting origin kind (clients cannot set arbitrary origin
+// kinds) and uses it to seed the agent greeting instead of an LLM welcome step.
+const onboardingFirstTaskMarkerSchema = {
+  onboardingFirstTask: z.boolean().optional(),
+};
+
 export const createIssueInputSchema = createIssueBaseSchema.extend({
   status: createIssueBaseSchema.shape.status.optional(),
   ...createIssueDuplicateGuardSchema,
+  ...onboardingFirstTaskMarkerSchema,
 });
 
 export const createIssueSchema = withCreateIssueStatusDefault(
-  createIssueBaseSchema.extend(createIssueDuplicateGuardSchema),
+  createIssueBaseSchema.extend({
+    ...createIssueDuplicateGuardSchema,
+    ...onboardingFirstTaskMarkerSchema,
+  }),
 ).superRefine(requireBlockedStatusForUnblockDescriptor);
 
 export type CreateIssue = z.infer<typeof createIssueSchema>;

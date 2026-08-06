@@ -201,6 +201,7 @@ import {
   getClosedIsolatedExecutionWorkspaceMessage,
   isClosedIsolatedExecutionWorkspace,
   ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY,
+  ONBOARDING_FIRST_TASK_ORIGIN_KIND,
   type AskUserQuestionsAnswer,
   type AskUserQuestionsInteraction,
   type ActivityEvent,
@@ -4929,7 +4930,11 @@ export function IssueDetail() {
             <IssueDetailChatTab
               threadHeader={taskChatThreadHeader}
               issueBrief={
-                taskChatShellEnabled
+                // Suppress the seeded-description bubble for the onboarding first
+                // task: its description is agent instructions, not something the
+                // user typed. The user lands on a seeded agent greeting instead.
+                taskChatShellEnabled &&
+                issue.originKind !== ONBOARDING_FIRST_TASK_ORIGIN_KIND
                   ? {
                       description: issue.description ?? "",
                       author: issue.createdByAgentId ? "agent" : "human",

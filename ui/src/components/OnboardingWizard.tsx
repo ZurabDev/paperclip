@@ -82,7 +82,7 @@ function buildMissionFromQuestionnaire(q1: string, q2: string, q3: string, q4: s
 }
 
 const ONBOARDING_STORAGE_KEY = "paperclip-onboarding-state";
-const DEFAULT_TASK_TITLE = "Get started: understand my goals and propose a plan";
+const DEFAULT_TASK_TITLE = "Paperclip onboarding";
 const DEFAULT_TASK_DESCRIPTION = `You are the Paperclip agent. This is your first task. Your job here is to
 understand what the user wants and turn it into a concrete plan — not to
 start building yet.

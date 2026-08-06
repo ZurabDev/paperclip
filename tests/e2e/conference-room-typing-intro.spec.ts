@@ -11,7 +11,7 @@ import { test, expect } from "@playwright/test";
 
 const COMPANY_NAME = `E2E-TypingIntro-${Date.now()}`;
 const MISSION = "Verify the first-task launch survives the wizard handoff.";
-const FIRST_TASK_TITLE = "Get started: understand my goals and propose a plan";
+const FIRST_TASK_TITLE = "Paperclip onboarding";
 
 test.describe("First-task launch after onboarding wizard", () => {
   test("creates the first task and opens its detail page", async ({

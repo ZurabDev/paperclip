@@ -158,6 +158,7 @@ elif [ "$channel" = "nightly" ]; then
   # Nightly promotes an already-shipped canary commit, so it runs from a
   # detached checkout of that commit rather than the master branch tip.
   require_channel_tag_at_head canary
+  require_channel_tag_absent_at_head nightly
   TARGET_PUBLISH_VERSION="$(next_prerelease_version nightly "$TARGET_STABLE_VERSION" "${PUBLIC_PACKAGE_NAMES[@]}")"
   DIST_TAG="nightly"
   tag_name="$(prerelease_tag_name nightly "$TARGET_PUBLISH_VERSION")"

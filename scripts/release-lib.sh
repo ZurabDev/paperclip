@@ -505,6 +505,21 @@ require_channel_tag_at_head() {
   fi
 }
 
+# The inverse guard: a commit ships on a promotion channel at most once, so
+# concurrent or repeated runs cannot double-publish it. Delete the lane tag
+# first if a republish is genuinely intended.
+require_channel_tag_absent_at_head() {
+  local channel="$1"
+  local existing
+
+  require_prerelease_channel "$channel"
+
+  existing="$(git -C "$REPO_ROOT" tag --points-at HEAD | grep "^${channel}/v" | head -1 || true)"
+  if [ -n "$existing" ]; then
+    release_fail "HEAD already shipped as ${existing}; delete that tag first if you really want to republish this commit on the ${channel} channel."
+  fi
+}
+
 require_npm_publish_auth() {
   local dry_run="$1"
 

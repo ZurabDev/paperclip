@@ -49,6 +49,13 @@ require_channel_tag_at_head() {
   fi
   echo "[fixture] require_channel_tag_at_head $1"
 }
+require_channel_tag_absent_at_head() {
+  if [ "\${FAKE_PRESENT_CHANNEL_TAG:-}" = "$1" ]; then
+    echo "Error: HEAD already shipped as $1/v2026.710.0-$1.0; delete that tag first if you really want to republish this commit on the $1 channel." >&2
+    exit 1
+  fi
+  echo "[fixture] require_channel_tag_absent_at_head $1"
+}
 require_clean_worktree() { :; }
 require_npm_publish_auth() { :; }
 git_local_tag_exists() { return 1; }
@@ -176,5 +183,15 @@ test("nightly refuses commits that never shipped a canary", () => {
 
   assert.equal(result.status, 1);
   assert.match(result.output, /HEAD has no canary\/v\* tag/);
+  assert.doesNotMatch(result.calls, /^pnpm /m);
+});
+
+test("nightly refuses commits that already shipped as a nightly", () => {
+  const result = runRelease(["nightly", "--skip-verify", "--dry-run"], {
+    FAKE_PRESENT_CHANNEL_TAG: "nightly",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(result.output, /HEAD already shipped as nightly\/v/);
   assert.doesNotMatch(result.calls, /^pnpm /m);
 });

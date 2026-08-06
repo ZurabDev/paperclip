@@ -220,6 +220,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: npm-canary
+    # The workflow-level concurrency group is per event, so a forced dispatch
+    # nightly could otherwise overlap the scheduled one and race it to the
+    # same next -nightly.N version. Serialize actual nightly publishes across
+    # events here; release.sh additionally refuses to double-publish a commit
+    # that already carries a nightly tag.
+    concurrency:
+      group: release-publish-nightly
+      cancel-in-progress: false
     permissions:
       contents: write
       id-token: write

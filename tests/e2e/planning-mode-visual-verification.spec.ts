@@ -66,7 +66,8 @@ test("captures planning mode UI for desktop and mobile", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "Review" })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: /Get started/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
+  // The wizard now drops the user straight onto the first task's detail page.
+  await expect(page).toHaveURL(/\/issues\/[^/]+$/, { timeout: 30_000 });
 
   const baseOrigin = new URL(page.url()).origin;
   const companyRes = await page.request.get(`${baseOrigin}/api/companies`);

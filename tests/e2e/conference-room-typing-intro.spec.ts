@@ -4,16 +4,17 @@ import { test, expect } from "@playwright/test";
  * E2E: post-wizard onboarding launch.
  *
  * Completing the onboarding wizard now creates the first assigned task and
- * lands the user on the company dashboard. The chat intro still has unit
- * coverage in BoardChat tests; the wizard handoff no longer routes there.
+ * drops the user straight onto that task's detail page (not the dashboard),
+ * so they land in the conversation the agent will start in. The chat intro
+ * still has unit coverage in BoardChat tests.
  */
 
 const COMPANY_NAME = `E2E-TypingIntro-${Date.now()}`;
-const MISSION = "Verify the dashboard launch survives the wizard handoff.";
+const MISSION = "Verify the first-task launch survives the wizard handoff.";
 const FIRST_TASK_TITLE = "Get started: understand my goals and propose a plan";
 
-test.describe("Dashboard launch after onboarding wizard", () => {
-  test("creates the first task and opens the dashboard", async ({
+test.describe("First-task launch after onboarding wizard", () => {
+  test("creates the first task and opens its detail page", async ({
     page,
     baseURL,
   }) => {
@@ -82,12 +83,13 @@ test.describe("Dashboard launch after onboarding wizard", () => {
     // Step 4: adapter (claude_local default); heartbeat is intercepted.
     await page.getByRole("button", { name: /Give it a heartbeat/ }).click();
 
-    // Step 5: review → Get started creates the first task and opens dashboard.
+    // Step 5: review → Get started creates the first task and opens its
+    // detail page.
     const getStarted = page.getByRole("button", { name: /Get started/ });
     await getStarted.waitFor({ timeout: 20_000 });
     await getStarted.click();
 
-    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
+    await expect(page).toHaveURL(/\/issues\/[^/]+$/, { timeout: 30_000 });
 
     const companiesRes = await page.request.get("/api/companies");
     expect(companiesRes.ok()).toBe(true);

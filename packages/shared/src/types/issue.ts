@@ -1117,8 +1117,11 @@ export interface AskUserQuestionsResult {
   answers: AskUserQuestionsAnswer[];
   cancelled?: true;
   cancellationReason?: string | null;
-  expirationReason?: "superseded_by_comment";
+  expirationReason?: "superseded_by_comment" | "superseded_by_newer_interaction";
   commentId?: string | null;
+  // Set with expirationReason "superseded_by_newer_interaction": the newer
+  // sibling ask_user_questions that replaced this one (PAP-437).
+  supersededByInteractionId?: string | null;
   summaryMarkdown?: string | null;
 }
 

@@ -10,7 +10,7 @@ import {
   getCheckboxConfirmationSelectedLabels,
   getItemVerdictProgress,
   getQuestionAnswerLabels,
-  isDegenerateAskUserQuestions,
+  shouldHideInteractionCard,
   normalizeRequestConfirmationTargetHref,
   type AskUserQuestionsAnswer,
   type AskUserQuestionsInteraction,
@@ -3177,14 +3177,16 @@ export function IssueThreadInteractionCard({
   onUploadImage,
   externalReferences,
 }: IssueThreadInteractionCardProps) {
-  // Single enforcement point (PAP-424, plan from PAP-420): a degenerate
-  // `ask_user_questions` card — meaningless placeholder junk like the onboarding
-  // `Test / A` card — offers no genuine question, so it is never drawn. Every
-  // render site (both thread backbones + the attention resolver) routes through
-  // this component, so suppressing here suppresses it everywhere at once. The
-  // interaction is still created and stored server-side; only the render is
-  // suppressed. Composition sites additionally filter it so no empty slot lingers.
-  if (isDegenerateAskUserQuestions(interaction)) return null;
+  // Single enforcement point (PAP-424, plan from PAP-420; extended by PAP-437):
+  // a card that should never be drawn — a degenerate `ask_user_questions`
+  // (placeholder junk like the onboarding `Test / A` card, no genuine question)
+  // or a stale sibling the server auto-expired when its creator posted a newer
+  // question (`superseded_by_newer_interaction`). Every render site (both thread
+  // backbones + the attention resolver) routes through this component, so
+  // suppressing here suppresses it everywhere at once. The interaction is still
+  // created and stored server-side; only the render is suppressed. Composition
+  // sites additionally filter it so no empty slot lingers.
+  if (shouldHideInteractionCard(interaction)) return null;
   const isPlan = isPlanConfirmation(interaction);
   const isToolAction =
     interaction.kind === "request_confirmation" && isToolActionConfirmation(interaction);

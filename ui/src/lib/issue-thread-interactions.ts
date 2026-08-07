@@ -351,3 +351,34 @@ export function isDegenerateAskUserQuestions(
   if (questions.length === 0) return true;
   return questions.every(isDegenerateAskUserQuestion);
 }
+
+/**
+ * A stale sibling `ask_user_questions` that the server auto-expired when its own
+ * creator posted a newer one on the same issue (PAP-437). The replacement card
+ * is already in the thread, so this expired shell adds nothing and is never
+ * drawn. Gated on `status === "expired"` so a still-pending card is never hidden
+ * (PAP-424 / 00b136f45: hiding a pending question would strand the assignee).
+ * Distinct from `superseded_by_comment`, which keeps its stale notice.
+ */
+export function isSupersededByNewerSiblingInteraction(
+  interaction: IssueThreadInteraction,
+): boolean {
+  if (interaction.kind !== "ask_user_questions") return false;
+  if (interaction.status !== "expired") return false;
+  return interaction.result?.expirationReason === "superseded_by_newer_interaction";
+}
+
+/**
+ * Single enforcement point for whether an interaction card should be suppressed
+ * from every thread surface. Routing all render sites through this one predicate
+ * keeps composition backbones and the card in lockstep, so a suppressed card
+ * never leaves an empty slot in one place while another still draws it.
+ */
+export function shouldHideInteractionCard(
+  interaction: IssueThreadInteraction,
+): boolean {
+  return (
+    isDegenerateAskUserQuestions(interaction)
+    || isSupersededByNewerSiblingInteraction(interaction)
+  );
+}

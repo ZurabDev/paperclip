@@ -9,6 +9,8 @@ import {
   getRequestConfirmationTargetHref,
   getQuestionAnswerLabels,
   isDegenerateAskUserQuestions,
+  isSupersededByNewerSiblingInteraction,
+  shouldHideInteractionCard,
   normalizeRequestConfirmationTargetHref,
 } from "./issue-thread-interactions";
 import type {
@@ -507,5 +509,83 @@ describe("isDegenerateAskUserQuestions", () => {
       payload: { version: 1 },
     } as unknown as IssueThreadInteraction;
     expect(isDegenerateAskUserQuestions(confirmation)).toBe(false);
+  });
+});
+
+describe("isSupersededByNewerSiblingInteraction", () => {
+  function askInteraction(overrides: Partial<AskUserQuestionsInteraction>): AskUserQuestionsInteraction {
+    return {
+      id: "interaction-ask",
+      companyId: "company-1",
+      issueId: "issue-1",
+      kind: "ask_user_questions",
+      status: "expired",
+      continuationPolicy: "wake_assignee",
+      ...resolverPolicyFields,
+      createdAt: "2026-04-06T12:00:00.000Z",
+      updatedAt: "2026-04-06T12:00:00.000Z",
+      payload: {
+        version: 1,
+        questions: [{ id: "q", prompt: "t", selectionMode: "single", options: [{ id: "L", label: "L" }] }],
+      },
+      ...overrides,
+    } as AskUserQuestionsInteraction;
+  }
+
+  it("hides an expired card superseded by a newer sibling question", () => {
+    const interaction = askInteraction({
+      status: "expired",
+      result: {
+        version: 1,
+        answers: [],
+        expirationReason: "superseded_by_newer_interaction",
+        supersededByInteractionId: "interaction-newer",
+        summaryMarkdown: null,
+      },
+    });
+    expect(isSupersededByNewerSiblingInteraction(interaction)).toBe(true);
+    expect(shouldHideInteractionCard(interaction)).toBe(true);
+  });
+
+  it("never hides a still-pending card (would strand the assignee)", () => {
+    // Guards the PAP-424 / 00b136f45 invariant: a pending question must always
+    // render even if the result somehow already names a superseding sibling.
+    const interaction = askInteraction({
+      status: "pending",
+      result: {
+        version: 1,
+        answers: [],
+        expirationReason: "superseded_by_newer_interaction",
+        supersededByInteractionId: "interaction-newer",
+        summaryMarkdown: null,
+      },
+    });
+    expect(isSupersededByNewerSiblingInteraction(interaction)).toBe(false);
+    expect(shouldHideInteractionCard(interaction)).toBe(false);
+  });
+
+  it("keeps the stale notice for a comment-superseded card (does not hide it)", () => {
+    const interaction = askInteraction({
+      status: "expired",
+      result: {
+        version: 1,
+        answers: [],
+        expirationReason: "superseded_by_comment",
+        commentId: "11111111-1111-1111-1111-111111111111",
+        summaryMarkdown: null,
+      },
+    });
+    expect(isSupersededByNewerSiblingInteraction(interaction)).toBe(false);
+    expect(shouldHideInteractionCard(interaction)).toBe(false);
+  });
+
+  it("still hides a degenerate card through the combined predicate", () => {
+    const degenerate = askInteraction({
+      status: "pending",
+      result: null,
+      payload: { version: 1, questions: [] },
+    });
+    expect(isSupersededByNewerSiblingInteraction(degenerate)).toBe(false);
+    expect(shouldHideInteractionCard(degenerate)).toBe(true);
   });
 });

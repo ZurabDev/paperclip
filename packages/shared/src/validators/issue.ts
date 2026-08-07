@@ -843,8 +843,11 @@ export const askUserQuestionsResultSchema = z.object({
   answers: z.array(askUserQuestionsAnswerSchema).max(20),
   cancelled: z.literal(true).optional(),
   cancellationReason: z.string().trim().max(4000).nullable().optional(),
-  expirationReason: z.literal("superseded_by_comment").optional(),
+  expirationReason: z.enum(["superseded_by_comment", "superseded_by_newer_interaction"]).optional(),
   commentId: z.string().uuid().nullable().optional(),
+  // Set alongside expirationReason "superseded_by_newer_interaction": the id of
+  // the newer sibling ask_user_questions that replaced this one (PAP-437).
+  supersededByInteractionId: z.string().uuid().nullable().optional(),
   summaryMarkdown: z.string().max(20000).nullable().optional(),
 });
 

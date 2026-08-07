@@ -27,7 +27,7 @@ import {
   interactionThreadAnchorMs,
   isSuppressedThreadInteraction,
 } from "@/components/task-chat/interaction-thread-order";
-import { isDegenerateAskUserQuestions } from "@/lib/issue-thread-interactions";
+import { shouldHideInteractionCard } from "@/lib/issue-thread-interactions";
 import { TaskChatBubbleActions } from "@/components/task-chat/TaskChatBubbleActions";
 import type { FeedbackVoteValue } from "@paperclipai/shared";
 import { TaskChatThreadView, taskChatContentKey } from "@/components/task-chat/TaskChatThreadView";
@@ -238,10 +238,11 @@ export function TaskChatThread(props: TaskChatThreadProps) {
       // them so a dead card never stacks above the one that replaced it
       // (PAP-416).
       if (isSuppressedThreadInteraction(interaction)) continue;
-      // A degenerate `ask_user_questions` card (e.g. the onboarding `Test / A`
-      // placeholder) is never rendered — filter it here so it leaves no empty
-      // slot or gap in the ordered backbone (PAP-424, plan from PAP-420).
-      if (isDegenerateAskUserQuestions(interaction)) continue;
+      // A never-rendered card — a degenerate `ask_user_questions` (e.g. the
+      // onboarding `Test / A` placeholder) or a stale sibling superseded by a
+      // newer question (PAP-437) — is filtered here so it leaves no empty slot
+      // or gap in the ordered backbone (PAP-424, plan from PAP-420).
+      if (shouldHideInteractionCard(interaction)) continue;
       const createdAtMs = toMs(interaction.createdAt);
       const handoffAtMs =
         interaction.kind === "request_confirmation" && interaction.sourceRunId

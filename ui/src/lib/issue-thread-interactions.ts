@@ -304,3 +304,47 @@ export function getQuestionAnswerLabels(args: {
   if (otherText) labels.push(`Other: ${otherText}`);
   return labels;
 }
+
+/**
+ * A single `ask_user_questions` question is degenerate when it offers no genuine
+ * way to answer. Structural only — no semantic guessing about the wording:
+ *
+ *  - its `prompt` is empty / whitespace-only, OR
+ *  - it presents no real choice: fewer than two fixed (selectable) options AND
+ *    no first-class free-text option (the PAP-419 `freeText` flag). A lone fixed
+ *    option like `A` with nothing else to pick and no place to type is not a
+ *    question.
+ *
+ * Legitimate shapes pass: yes/no (2 options), multi-select (≥2), and a free-text
+ * option all give the user something real to answer.
+ */
+function isDegenerateAskUserQuestion(question: AskUserQuestionsQuestion): boolean {
+  if (question.prompt.trim().length === 0) return true;
+  const hasFreeTextOption = question.options.some((option) => option.freeText === true);
+  if (hasFreeTextOption) return false;
+  const selectableOptionCount = question.options.filter(
+    (option) => option.freeText !== true,
+  ).length;
+  return selectableOptionCount < 2;
+}
+
+/**
+ * Structural render guard for `ask_user_questions` cards (PAP-424, implementing
+ * the approved plan from PAP-420). A card is degenerate — meaningless
+ * placeholder junk such as the onboarding `Test / A` card — when it offers no
+ * genuine question: it has zero questions, OR every question is degenerate (see
+ * {@link isDegenerateAskUserQuestion}: blank prompt, or no real choice).
+ *
+ * UI-only: the interaction is still created and stored server-side (audit
+ * intact); callers use this purely to decide whether to draw the card. Returns
+ * false for any other interaction kind — the guard is scoped to
+ * `ask_user_questions`.
+ */
+export function isDegenerateAskUserQuestions(
+  interaction: IssueThreadInteraction,
+): boolean {
+  if (interaction.kind !== "ask_user_questions") return false;
+  const questions = interaction.payload.questions;
+  if (questions.length === 0) return true;
+  return questions.every(isDegenerateAskUserQuestion);
+}

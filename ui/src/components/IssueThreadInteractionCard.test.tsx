@@ -243,6 +243,46 @@ describe("IssueThreadInteractionCard", () => {
     );
   });
 
+  it("renders nothing for a degenerate ask_user_questions card (PAP-424)", () => {
+    // The onboarding `Test / A` placeholder: a single question whose only option
+    // is a lone fixed choice with nothing else to pick and no free-text field.
+    const degenerate = {
+      ...pendingAskUserQuestionsInteraction,
+      id: "interaction-questions-degenerate",
+      payload: {
+        version: 1 as const,
+        title: "Placeholder",
+        questions: [
+          {
+            id: "q1",
+            prompt: "Test",
+            selectionMode: "single" as const,
+            options: [{ id: "a", label: "A" }],
+          },
+        ],
+      },
+    };
+
+    const host = renderCard({
+      interaction: degenerate,
+      onSubmitInteractionAnswers: vi.fn(),
+    });
+
+    // No card wrapper, no title, no controls — the component returns null.
+    expect(host.childElementCount).toBe(0);
+    expect(host.textContent).toBe("");
+  });
+
+  it("still renders a legitimate ask_user_questions card", () => {
+    const host = renderCard({
+      interaction: pendingAskUserQuestionsInteraction,
+      onSubmitInteractionAnswers: vi.fn(),
+    });
+
+    expect(host.childElementCount).toBeGreaterThan(0);
+    expect(host.querySelectorAll('[role="radio"]').length).toBeGreaterThan(0);
+  });
+
   it("only shows question cancellation when a cancel handler is wired", () => {
     const withoutHandler = renderCard({
       interaction: pendingAskUserQuestionsInteraction,

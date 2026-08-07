@@ -243,9 +243,10 @@ describe("IssueThreadInteractionCard", () => {
     );
   });
 
-  it("renders nothing for a degenerate ask_user_questions card (PAP-424)", () => {
-    // The onboarding `Test / A` placeholder: a single question whose only option
-    // is a lone fixed choice with nothing else to pick and no free-text field.
+  it("renders nothing for a degenerate ask_user_questions card", () => {
+    // A truly unanswerable question: a prompt with no options and no free-text
+    // field, so there is nothing for the user to select or type. Hiding it
+    // strands nothing.
     const degenerate = {
       ...pendingAskUserQuestionsInteraction,
       id: "interaction-questions-degenerate",
@@ -255,9 +256,9 @@ describe("IssueThreadInteractionCard", () => {
         questions: [
           {
             id: "q1",
-            prompt: "Test",
+            prompt: "Anything?",
             selectionMode: "single" as const,
-            options: [{ id: "a", label: "A" }],
+            options: [],
           },
         ],
       },

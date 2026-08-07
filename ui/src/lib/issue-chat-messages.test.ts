@@ -759,9 +759,10 @@ describe("buildIssueChatMessages", () => {
         }),
       ],
       interactions: [
-        // The onboarding `Test / A` placeholder — must be filtered out entirely.
+        // A truly unanswerable card (no options, no free-text) — must be
+        // filtered out entirely.
         askInteraction("interaction-degenerate", [
-          { id: "q1", prompt: "Test", selectionMode: "single", options: [{ id: "a", label: "A" }] },
+          { id: "q1", prompt: "Anything?", selectionMode: "single", options: [] },
         ]),
         // A legitimate yes/no question survives.
         askInteraction("interaction-legit", [

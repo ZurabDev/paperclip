@@ -416,7 +416,10 @@ describe("isDegenerateAskUserQuestions", () => {
     ]))).toBe(true);
   });
 
-  it("flags the `Test / A` case: a lone fixed option with nothing else to pick", () => {
+  it("keeps a single fixed-option question: it is answerable (select + submit)", () => {
+    // A lone fixed option is still resolvable — the user selects it and submits —
+    // so it must render. Hiding it would strand a pending interaction the
+    // assignee is waiting on.
     expect(isDegenerateAskUserQuestions(askInteraction([
       {
         id: "q1",
@@ -424,7 +427,7 @@ describe("isDegenerateAskUserQuestions", () => {
         selectionMode: "single",
         options: [{ id: "a", label: "A" }],
       },
-    ]))).toBe(true);
+    ]))).toBe(false);
   });
 
   it("flags a question with no options at all", () => {
@@ -474,9 +477,10 @@ describe("isDegenerateAskUserQuestions", () => {
   });
 
   it("is degenerate only when EVERY question is degenerate", () => {
-    // One real question keeps the whole card.
+    // One real question keeps the whole card, even next to a degenerate one
+    // (here: a question with no options and no free-text).
     expect(isDegenerateAskUserQuestions(askInteraction([
-      { id: "q1", prompt: "Test", selectionMode: "single", options: [{ id: "a", label: "A" }] },
+      { id: "q1", prompt: "Anything?", selectionMode: "single", options: [] },
       {
         id: "q2",
         prompt: "Ship it?",

@@ -7636,14 +7636,23 @@ export function issueRoutes(
     } = sanitizedBody;
     // The onboarding first-task marker grants privileged, server-owned behavior:
     // it stamps the onboarding origin (which suppresses the seeded description in
-    // the UI) and seeds a comment authored *as the assigned agent*. The only
-    // legitimate caller is the onboarding wizard, which always runs under the
-    // human's own board/user session (`req.actor.type === "board"`). Honoring the
-    // marker for an agent actor would let one agent fabricate a statement
-    // attributed to another agent and hide an ordinary issue's description — so
-    // gate it strictly to human (board) actors. Agents and unauthenticated
-    // callers get an ordinary issue regardless of the flag.
-    const isOnboardingFirstTask = rawOnboardingFirstTask === true && req.actor.type === "board";
+    // the UI) and seeds a comment authored *as the assigned agent*. Honor it only
+    // when the request is genuinely the onboarding wizard creating a company's
+    // very first task, verified server-side so a client marker alone cannot
+    // trigger it:
+    //   1. the caller is a human board/user session (the wizard never runs as an
+    //      agent), and
+    //   2. the company has no existing issues yet — i.e. this really is the first
+    //      task. An established company creating an ordinary issue can never reach
+    //      the greeting/description-suppression path, so no board caller can
+    //      fabricate a statement attributed to an assigned agent on a normal task.
+    // Fails closed: if it is not verifiably the first task, the flag is ignored
+    // and an ordinary issue is created.
+    const onboardingFirstTaskRequested =
+      rawOnboardingFirstTask === true && req.actor.type === "board";
+    const isOnboardingFirstTask = onboardingFirstTaskRequested
+      ? (await svc.count(companyId)) === 0
+      : false;
     const watchdogDiscovery = normalizeWatchdogDiscovery(rawWatchdogDiscovery);
     const watchdogProductBugFollowUp = await resolveTaskWatchdogProductBugFollowUp(
       req,

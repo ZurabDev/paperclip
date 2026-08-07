@@ -125,6 +125,7 @@ import { IssueProperties } from "../components/IssueProperties";
 import { PauseAffectsSummaryView } from "../components/interrupt-handoff/InterruptHandoffViews";
 import { computePauseAffectsSummary } from "../lib/interrupt-handoff";
 import { useIssueExternalObjects } from "../hooks/useIssueExternalObjects";
+import { useIssuePlanDocument } from "../hooks/useIssuePlanDocument";
 import { IssueRunLedger } from "../components/IssueRunLedger";
 import { IssueWorkspaceCard } from "../components/IssueWorkspaceCard";
 import type { MentionOption } from "../components/MarkdownEditor";
@@ -1997,6 +1998,19 @@ export function IssueDetail() {
     () => childIssues,
     [issuePanelKey],
   );
+  // Onboarding first task only: hide the Properties sidebar until a plan exists,
+  // then reveal it already on the Plan tab. We gate the panel *mount* (withhold
+  // the panel content) rather than flipping the global `panelVisible` preference
+  // — that preference persists to localStorage and would leak "hidden" into every
+  // other task. Every non-first task has originKind !== onboarding_first_task, so
+  // `suppressPanelForFirstTask` stays false and behavior is unchanged.
+  const isOnboardingFirstTask =
+    taskChatShellEnabled &&
+    issue?.originKind === ONBOARDING_FIRST_TASK_ORIGIN_KIND;
+  const { data: firstTaskPlanDoc } = useIssuePlanDocument(
+    isOnboardingFirstTask ? issue?.id : null,
+  );
+  const suppressPanelForFirstTask = isOnboardingFirstTask && !firstTaskPlanDoc;
   const showRichSubIssuesSection = shouldRenderRichSubIssuesSection(childIssuesLoading, childIssues.length);
   const siblingNavigation = useMemo(
     () => issue && !childIssuesLoading && !siblingIssuesLoading && !siblingIssuesError
@@ -3274,7 +3288,7 @@ export function IssueDetail() {
   }, [issue?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!panelIssue) {
+    if (!panelIssue || suppressPanelForFirstTask) {
       closePanel();
       return;
     }
@@ -3302,6 +3316,7 @@ export function IssueDetail() {
     openPanel,
     panelChildIssues,
     panelIssue,
+    suppressPanelForFirstTask,
     resolvedHasActiveRun,
     checkIssueMonitorNow.isPending,
     checkIssueMonitorNow.mutate,

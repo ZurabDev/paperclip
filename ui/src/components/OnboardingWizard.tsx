@@ -879,7 +879,7 @@ export function OnboardingWizard() {
                         ) : step === 4 ? (
                           <>Pick the adapter and model your lead will run on, then check the environment.</>
                         ) : (
-                          <>Everything's set up. Your first agent is online and ready to work.</>
+                          <>Your first agent is online and ready to work.</>
                         )}
                       </p>
                     </div>

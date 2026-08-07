@@ -466,6 +466,35 @@ describe("IssueThreadInteractionCard", () => {
     );
   });
 
+  it("standardizes the bare-reject button to Reject even when the payload carries a legacy rejectLabel", () => {
+    const host = renderCard({
+      interaction: {
+        ...pendingRequestConfirmationInteraction,
+        payload: {
+          ...pendingRequestConfirmationInteraction.payload,
+          // Onboarding/plan-approval interactions are still seeded with the
+          // legacy "Request changes" reject label; it must not leak into the CTA.
+          rejectLabel: "Request changes",
+          rejectRequiresReason: false,
+        },
+      },
+      onAcceptInteraction: vi.fn(async () => undefined),
+      onRejectInteraction: vi.fn(async () => undefined),
+    });
+
+    const labels = Array.from(host.querySelectorAll("button")).map((button) =>
+      button.textContent?.trim(),
+    );
+
+    // Canonical plan-approval grammar, right→left: Approve · Revise… · Reject.
+    // "Revise…" already carries the send-back-with-notes path, so a distinct
+    // "Request changes" word is redundant and must not render.
+    expect(labels).toContain("Reject");
+    expect(labels).toContain("Revise…");
+    expect(labels.some((label) => label?.includes("Approve"))).toBe(true);
+    expect(host.textContent).not.toContain("Request changes");
+  });
+
   it("does not expose continuation wake policy labels in the card header", () => {
     const host = renderCard({
       interaction: {
@@ -513,8 +542,10 @@ describe("IssueThreadInteractionCard", () => {
       onRejectInteraction,
     });
 
+    // The bare-reject button always renders the canonical "Reject", not the
+    // payload's "Keep it" — ConfirmationActionRow no longer honors the override.
     const declineButton = Array.from(host.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Keep it"),
+      button.textContent?.trim() === "Reject",
     );
     expect(declineButton).toBeTruthy();
 

@@ -10,6 +10,7 @@ import {
   getCheckboxConfirmationSelectedLabels,
   getItemVerdictProgress,
   getQuestionAnswerLabels,
+  isDegenerateAskUserQuestions,
   normalizeRequestConfirmationTargetHref,
   type AskUserQuestionsAnswer,
   type AskUserQuestionsInteraction,
@@ -2243,7 +2244,7 @@ function RequestConfirmationCard({
         <ConfirmationActionRow
           resetKey={`${interaction.id}:${interaction.status}`}
           approveLabel={interaction.payload.acceptLabel ?? CONFIRMATION_APPROVE_LABEL}
-          rejectLabel={interaction.payload.rejectLabel ?? CONFIRMATION_REJECT_LABEL}
+          rejectLabel={CONFIRMATION_REJECT_LABEL}
           approveVariant={isPlan ? "cta" : "default"}
           primaryActionOnRight={primaryActionOnRight}
           allowRevise={allowRevise}
@@ -2656,7 +2657,7 @@ function RequestCheckboxConfirmationCard({
         <ConfirmationActionRow
           resetKey={`${interaction.id}:${interaction.status}`}
           approveLabel={interaction.payload.acceptLabel ?? CONFIRMATION_APPROVE_LABEL}
-          rejectLabel={interaction.payload.rejectLabel ?? CONFIRMATION_REJECT_LABEL}
+          rejectLabel={CONFIRMATION_REJECT_LABEL}
           primaryActionOnRight={primaryActionOnRight}
           allowRevise={allowRevise}
           rejectRequiresReason={rejectRequiresReason}
@@ -3176,6 +3177,14 @@ export function IssueThreadInteractionCard({
   onUploadImage,
   externalReferences,
 }: IssueThreadInteractionCardProps) {
+  // Single enforcement point (PAP-424, plan from PAP-420): a degenerate
+  // `ask_user_questions` card — meaningless placeholder junk like the onboarding
+  // `Test / A` card — offers no genuine question, so it is never drawn. Every
+  // render site (both thread backbones + the attention resolver) routes through
+  // this component, so suppressing here suppresses it everywhere at once. The
+  // interaction is still created and stored server-side; only the render is
+  // suppressed. Composition sites additionally filter it so no empty slot lingers.
+  if (isDegenerateAskUserQuestions(interaction)) return null;
   const isPlan = isPlanConfirmation(interaction);
   const isToolAction =
     interaction.kind === "request_confirmation" && isToolActionConfirmation(interaction);

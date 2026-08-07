@@ -287,7 +287,7 @@ function createRequestCheckboxConfirmationInteraction(
       minSelected: 0,
       maxSelected: null,
       acceptLabel: "Delete selected",
-      rejectLabel: "Request changes",
+      rejectLabel: "Reject",
       rejectRequiresReason: false,
     },
     result: null,
@@ -498,7 +498,7 @@ export const planApprovalAcceptedRequestConfirmationInteraction = createRequestC
     version: 1,
     prompt: "Approve the plan and let the responsible start implementation?",
     acceptLabel: "Approve plan",
-    rejectLabel: "Request changes",
+    rejectLabel: "Reject",
     rejectRequiresReason: true,
     declineReasonPlaceholder: "Optional: what would you like revised?",
     target: {
@@ -921,7 +921,7 @@ export const manyOptionsRequestCheckboxConfirmationInteraction =
       minSelected: 0,
       maxSelected: null,
       acceptLabel: "Archive selected",
-      rejectLabel: "Request changes",
+      rejectLabel: "Reject",
       rejectRequiresReason: false,
     },
   });
@@ -967,7 +967,7 @@ export const staleTargetRequestCheckboxConfirmationInteraction =
       version: 1,
       prompt: "Check the draft documents you want me to delete.",
       acceptLabel: "Delete selected",
-      rejectLabel: "Request changes",
+      rejectLabel: "Reject",
       options: [
         { id: "draft-march-report", label: "Old draft report" },
         { id: "draft-spec-v1", label: "Spec v1 (superseded)" },

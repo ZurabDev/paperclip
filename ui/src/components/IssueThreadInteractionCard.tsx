@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Agent } from "@paperclipai/shared";
-import { AlertTriangle, ArrowUpRight, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, CircleDashed, Clock, ExternalLink, FileText, GitBranch, ImagePlus, Loader2, MessageSquareQuote, MinusCircle, ShieldAlert, ThumbsUp, TriangleAlert, Users, Wrench, X, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, CircleDashed, Clock, ExternalLink, FileText, GitBranch, ImagePlus, Loader2, MessageSquareQuote, MinusCircle, ShieldAlert, ThumbsUp, TriangleAlert, Wrench, X, XCircle } from "lucide-react";
 import { Link } from "@/lib/router";
 import { formatAssigneeUserLabel } from "../lib/assignees";
 import {
@@ -3243,8 +3243,6 @@ export function IssueThreadInteractionCard({
       : null;
   // P4: audit-visible distinction between agent and human resolution.
   const resolvedByAgent = Boolean(interaction.resolvedByAgentId);
-  // P2: agents may resolve when the governance-capped policy allows it.
-  const agentsMayResolve = interaction.effectiveResolverPolicy === "board_or_agents";
   // P3: interactions directed at a specific agent addressee.
   const addresseeLabel = interaction.addresseeAgentId
     ? resolveActorLabel({
@@ -3274,23 +3272,6 @@ export function IssueThreadInteractionCard({
               <span className="text-current/60">/</span>
               {statusText}
             </span>
-            {agentsMayResolve ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className="gap-1 border-indigo-500/50 text-indigo-700 dark:text-indigo-200"
-                    data-testid="interaction-policy-badge"
-                  >
-                    <Users className="h-3 w-3" />
-                    Agents may resolve
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs text-xs">
-                  Governance allows an assigned agent to resolve this interaction without waiting for the board.
-                </TooltipContent>
-              </Tooltip>
-            ) : null}
             {addresseeLabel ? (
               <Tooltip>
                 <TooltipTrigger asChild>

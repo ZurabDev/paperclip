@@ -925,19 +925,19 @@ describe("IssueThreadInteractionCard tool-action card", () => {
     expect(host.textContent).not.toContain("Technical details");
   });
 
-  it("renders the agents-may-resolve policy badge and addressee chip", () => {
+  it("renders the addressee chip without the removed policy badge", () => {
     const host = renderCard({
       interaction: agentAddressedRequestConfirmationInteraction,
     });
 
-    const policyBadge = host.querySelector('[data-testid="interaction-policy-badge"]');
-    expect(policyBadge?.textContent).toContain("Agents may resolve");
+    // PAP-440: the "Agents may resolve" policy badge was pure noise — never rendered.
+    expect(host.querySelector('[data-testid="interaction-policy-badge"]')).toBeNull();
 
     const addresseeBadge = host.querySelector('[data-testid="interaction-addressee-badge"]');
     expect(addresseeBadge?.textContent).toContain("For ");
   });
 
-  it("omits the policy and addressee badges for a board-only interaction", () => {
+  it("omits the addressee badge for a board-only interaction", () => {
     const host = renderCard({
       interaction: pendingRequestConfirmationInteraction,
     });

@@ -7634,7 +7634,16 @@ export function issueRoutes(
       onboardingFirstTask: rawOnboardingFirstTask,
       ...rawCreateBody
     } = sanitizedBody;
-    const isOnboardingFirstTask = rawOnboardingFirstTask === true;
+    // The onboarding first-task marker grants privileged, server-owned behavior:
+    // it stamps the onboarding origin (which suppresses the seeded description in
+    // the UI) and seeds a comment authored *as the assigned agent*. The only
+    // legitimate caller is the onboarding wizard, which always runs under the
+    // human's own board/user session (`req.actor.type === "board"`). Honoring the
+    // marker for an agent actor would let one agent fabricate a statement
+    // attributed to another agent and hide an ordinary issue's description — so
+    // gate it strictly to human (board) actors. Agents and unauthenticated
+    // callers get an ordinary issue regardless of the flag.
+    const isOnboardingFirstTask = rawOnboardingFirstTask === true && req.actor.type === "board";
     const watchdogDiscovery = normalizeWatchdogDiscovery(rawWatchdogDiscovery);
     const watchdogProductBugFollowUp = await resolveTaskWatchdogProductBugFollowUp(
       req,

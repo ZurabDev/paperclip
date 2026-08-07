@@ -2003,14 +2003,22 @@ export function IssueDetail() {
   // the panel content) rather than flipping the global `panelVisible` preference
   // — that preference persists to localStorage and would leak "hidden" into every
   // other task. Every non-first task has originKind !== onboarding_first_task, so
-  // `suppressPanelForFirstTask` stays false and behavior is unchanged.
+  // `suppressPanelForFirstTask` stays false and behavior is unchanged. The user
+  // can still opt in early via the "Show properties" header button, which sets a
+  // per-issue override (keyed on the issue id so it resets across navigations).
   const isOnboardingFirstTask =
     taskChatShellEnabled &&
     issue?.originKind === ONBOARDING_FIRST_TASK_ORIGIN_KIND;
   const { data: firstTaskPlanDoc } = useIssuePlanDocument(
     isOnboardingFirstTask ? issue?.id : null,
   );
-  const suppressPanelForFirstTask = isOnboardingFirstTask && !firstTaskPlanDoc;
+  const [firstTaskPanelOverrideIssueId, setFirstTaskPanelOverrideIssueId] = useState<
+    string | null
+  >(null);
+  const firstTaskPanelOverride =
+    firstTaskPanelOverrideIssueId !== null && firstTaskPanelOverrideIssueId === issue?.id;
+  const suppressPanelForFirstTask =
+    isOnboardingFirstTask && !firstTaskPlanDoc && !firstTaskPanelOverride;
   const showRichSubIssuesSection = shouldRenderRichSubIssuesSection(childIssuesLoading, childIssues.length);
   const siblingNavigation = useMemo(
     () => issue && !childIssuesLoading && !siblingIssuesLoading && !siblingIssuesError
@@ -4409,9 +4417,16 @@ export function IssueDetail() {
               size="icon-xs"
               className={cn(
                 "shrink-0 transition-opacity duration-200",
-                panelVisible ? "opacity-0 pointer-events-none w-0 overflow-hidden" : "opacity-100",
+                panelVisible && !suppressPanelForFirstTask
+                  ? "opacity-0 pointer-events-none w-0 overflow-hidden"
+                  : "opacity-100",
               )}
-              onClick={() => setPanelVisible(true)}
+              onClick={() => {
+                if (suppressPanelForFirstTask && issue?.id) {
+                  setFirstTaskPanelOverrideIssueId(issue.id);
+                }
+                setPanelVisible(true);
+              }}
               title="Show properties"
             >
               <SlidersHorizontal className="h-4 w-4" />

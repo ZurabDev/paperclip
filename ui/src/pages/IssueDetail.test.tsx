@@ -293,10 +293,13 @@ vi.mock("../components/IssueChatThread", () => ({
 }));
 
 // The redesign thread pulls in the MarkdownEditor composer, whose @mdxeditor
-// dependency cannot load under jsdom's CSSOM. These tests exercise the legacy
-// (flag-off) path, so an inert stub keeps the suite unit-scoped.
+// dependency cannot load under jsdom's CSSOM. The stub keeps the suite
+// unit-scoped but still renders the threadHeader JSX (the issue header row
+// moves inside the thread when the flag is on) so header controls stay testable.
 vi.mock("../components/TaskChatThread", () => ({
-  TaskChatThread: () => <div data-testid="task-chat-thread">Task chat thread</div>,
+  TaskChatThread: ({ threadHeader }: { threadHeader?: ReactNode }) => (
+    <div data-testid="task-chat-thread">{threadHeader}Task chat thread</div>
+  ),
 }));
 
 vi.mock("../components/IssueDocumentsSection", () => ({
@@ -1686,6 +1689,50 @@ describe("IssueDetail", () => {
     // stays hidden without touching the persisted panelVisible preference.
     expect(mockOpenPanel).not.toHaveBeenCalled();
     expect(mockClosePanel).toHaveBeenCalled();
+  });
+
+  it("keeps the Show properties button clickable on the first task and reveals the sidebar on demand", async () => {
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({
+      enableIssuePlanDecompositions: false,
+      enableExperimentalFileViewer: false,
+      enableExternalObjects: false,
+      enableTaskChatRedesign: true,
+    });
+    mockIssuesApi.get.mockResolvedValue(
+      createIssue({ originKind: ONBOARDING_FIRST_TASK_ORIGIN_KIND }),
+    );
+    // No plan yet: the panel mount is suppressed by default.
+    mockIssuesApi.getDocument.mockResolvedValue(null);
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <IssueDetail />
+        </QueryClientProvider>,
+      );
+    });
+
+    await flushReact();
+    await flushReact();
+    expect(mockOpenPanel).not.toHaveBeenCalled();
+
+    // Even though panelVisible is true, the suppressed first task keeps the
+    // opt-in button visible instead of fading it out.
+    const showPropertiesButton = container.querySelector<HTMLButtonElement>(
+      'button[title="Show properties"]',
+    );
+    expect(showPropertiesButton).toBeTruthy();
+    expect(showPropertiesButton!.className).not.toContain("pointer-events-none");
+
+    await act(async () => {
+      showPropertiesButton!.click();
+    });
+    await flushReact();
+
+    // The click overrides the first-task suppression and mounts the panel.
+    await waitForAssertion(() => {
+      expect(mockOpenPanel).toHaveBeenCalled();
+    });
   });
 
   it("reveals the properties sidebar on the first onboarding task once a plan document exists", async () => {

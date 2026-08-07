@@ -850,7 +850,7 @@ export function OnboardingWizard() {
                   morph reads as one capsule coming to life — dashed slot →
                   solid (configured) → liquid fill + blue glow (online). */}
               {step >= 3 && step <= 5 && (
-                <div className={cn("mb-6", step === 5 ? "space-y-[54px]" : "space-y-4")}>
+                <div className="mb-6 space-y-4">
                   <div className="flex items-center gap-3 mb-1">
                     <div className="bg-muted/50 p-2">
                       {step === 5 ? (
@@ -888,7 +888,7 @@ export function OnboardingWizard() {
                   <div
                     className={cn(
                       "flex flex-col items-center py-1 text-center",
-                      step === 5 ? "gap-2.5" : "gap-1.5"
+                      step === 5 ? "mt-8 gap-2.5" : "gap-1.5"
                     )}
                   >
                     <AgentCapsule

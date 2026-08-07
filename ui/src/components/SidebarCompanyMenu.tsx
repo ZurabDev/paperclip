@@ -454,7 +454,7 @@ export function SidebarCompanyMenu({ open: controlledOpen, onOpenChange }: Sideb
               disabled={isEditingOrder}
             >
               <Plus className="size-4" />
-              <span>{isCloud ? "Create new organization..." : "Create new company..."}</span>
+              <span>Create new organization...</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>

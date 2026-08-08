@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, type ComponentProps } from "react";
 import { IssueChatThread } from "@/components/IssueChatThread";
-import { useLiveRunTranscripts, type RunTranscriptSource } from "@/components/transcript/useLiveRunTranscripts";
+import {
+  useLiveRunTranscripts,
+  type RunTranscriptSource,
+} from "@/components/transcript/useLiveRunTranscripts";
+import { RunTranscriptView } from "@/components/transcript/RunTranscriptView";
 import { commentsToTaskChatItems } from "@/components/task-chat/task-chat-adapter";
 import {
   assembleThreadItems,
   attachSettledTurns,
   buildTurnSummary,
   coalesceSettledTurns,
-  deriveRunStatusLabel,
-  isNestableLiveChild,
   isTerminalRunStatus,
   prependIssueBrief,
   settledRunChildren,
@@ -59,20 +61,9 @@ export type TaskChatThreadProps = ComponentProps<typeof IssueChatThread>;
  * Two data sources feed the render layer, both reused from the existing thread:
  *   - the comment stream (incl. optimistic echoes) → author-typed bubbles, and
  *   - the live run transcript (useLiveRunTranscripts, the same poll+websocket
- *     source the current thread uses) → the in-flight turn streams
- *     thinking → tool → diff → responding, capped by a live "running" status
- *     pill.
+ *     source the current thread uses) → RunTranscriptView while in flight.
  *
- * Run activity is grouped into TaskChatTurnItem: the in-flight run renders as
- * ONE expandable parent row — its status line (whimsy gerund or in-flight
- * tool state + elapsed + tokens) is the turn's single visible line, with the
- * chronological tool activity nested behind an expand (PAP-354). Mid-run
- * agent text (interstitial updates between tool calls) is ephemeral
- * (PAP-361, round 9): while one streams it occupies a dedicated one-line row
- * PERMANENTLY RESERVED above the status line (so the layout above never
- * jumps), and when it finishes the text slides out and the slot sits empty —
- * nothing persists; the run log and the classic transcript remain the
- * archive. When the run terminates, its settled turn anchors after the run's
+ * Once a run terminates, its settled turn anchors after the run's
  * last comment (comment.runId linkage) and — when it directly follows that
  * reply bubble — attaches to it: the "✓ Worked · …" summary renders appended
  * to the bubble's always-visible timestamp line (round 9), still expandable
@@ -364,46 +355,9 @@ export function TaskChatThread(props: TaskChatThreadProps) {
     // (PAP-367).
     const out = assembleThreadItems(orderedEntries, turnsByAnchor, unanchored);
 
-    if (liveRun) {
-      const entries = transcriptByRun.get(liveRun.id) ?? [];
-      const parsed = transcriptToTaskChatItems(entries, {
-        runId: liveRun.id,
-        agentName: liveRun.agentName,
-        running: true,
-      });
-      // Parent-row model (PAP-354): the run's status line IS the live turn —
-      // one expandable row owning the activity. Only tool/usage rows nest
-      // inside it; a streaming interstitial update renders in the reserved row
-      // above the status line (liveStatus.selfTalk, PAP-361/round 9) and
-      // vanishes when it completes. The parent row sits last; on settle its
-      // summary attaches to the reply bubble's timestamp line.
-      const children = parsed.filter(isNestableLiveChild);
-      const startedAt = liveRun.startedAt ? new Date(liveRun.startedAt).getTime() : null;
-      const queued = liveRun.status === "queued";
-      const status = queued
-        ? { label: "Queued", detail: "Waiting to start", toolName: undefined, selfTalk: undefined }
-        : deriveRunStatusLabel(entries);
-      out.push({
-        id: `${liveRun.id}:turn`,
-        kind: "turn",
-        settled: false,
-        items: children,
-        summary: buildTurnSummary(entries),
-        liveStatus: {
-          id: `${liveRun.id}:status`,
-          kind: "status",
-          status: "running",
-          label: status.label,
-          detail: status.detail,
-          toolName: status.toolName,
-          selfTalk: status.selfTalk,
-          startedAtMs: startedAt ?? undefined,
-        },
-      });
-    }
     // PAP-362: two runs replying back-to-back (same agent, nothing but the
     // agent's own bubbles between) fold into ONE "Worked" row below the last
-    // reply; a user message, interaction, or the live turn keeps them apart.
+    // reply; a user message or interaction keeps them apart.
     // Round 9: a settled turn directly following its own agent's reply bubble
     // then attaches to that bubble — the "Worked · …" summary renders on the
     // bubble's always-visible timestamp line instead of as a standalone row.
@@ -414,6 +368,14 @@ export function TaskChatThread(props: TaskChatThreadProps) {
       hasBrief,
     );
   }, [orderedEntries, runs, liveRun, transcriptByRun, linkedRunMetaById, lastCommentIdByRun, hasBrief]);
+
+  const liveEntries = liveRun ? (transcriptByRun.get(liveRun.id) ?? []) : [];
+  const liveContentKey = liveEntries.reduce((total, entry) => {
+    if ("text" in entry) return total + entry.text.length;
+    if ("content" in entry) return total + entry.content.length;
+    return total + entry.kind.length;
+  }, liveEntries.length);
+  const threadContentKey = taskChatContentKey(items) + liveContentKey;
 
   // Feedback votes keyed by the comment they target (targetType
   // "issue_comment"), mirroring IssueChatThread — the redesign attaches the
@@ -488,7 +450,7 @@ export function TaskChatThread(props: TaskChatThreadProps) {
   // in document flow instead (the same scroll={false} path the previews use)
   // and track auto-follow against window scroll. Desktop stays byte-identical.
   const { isMobile } = useSidebar();
-  useWindowAutoFollow(isMobile ? taskChatContentKey(items) : 0, isMobile);
+  useWindowAutoFollow(isMobile ? threadContentKey : 0, isMobile);
 
   return (
     <div
@@ -496,7 +458,7 @@ export function TaskChatThread(props: TaskChatThreadProps) {
       data-testid="task-chat-thread"
     >
       <div className={cn("flex flex-col", !isMobile && "min-h-0 flex-1")}>
-        {items.length === 0 ? (
+        {items.length === 0 && !liveRun ? (
           <div className={isMobile ? undefined : "min-h-0 flex-1 overflow-y-auto"}>
             {threadHeader ? (
               <div
@@ -515,6 +477,21 @@ export function TaskChatThread(props: TaskChatThreadProps) {
             renderInteraction={renderInteraction}
             renderBrief={issueBrief ? () => <TaskChatDescriptionBubble brief={issueBrief} /> : undefined}
             renderMessageActions={renderMessageActions}
+            tail={liveRun ? (
+              <div data-testid="task-chat-live-transcript">
+                <RunTranscriptView
+                  entries={liveEntries}
+                  streaming
+                  emptyMessage={
+                    liveRun.status === "queued"
+                      ? "Waiting to start..."
+                      : "Waiting for transcript..."
+                  }
+                  externalReferences={externalReferences}
+                />
+              </div>
+            ) : null}
+            contentKey={threadContentKey}
             scroll={!isMobile}
           />
         )}

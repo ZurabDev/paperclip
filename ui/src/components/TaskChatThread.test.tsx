@@ -5,10 +5,13 @@ import { forwardRef, useImperativeHandle, type ForwardedRef } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { TaskChatThread } from "./TaskChatThread";
 
+const transcriptState = vi.hoisted(() => ({ transcriptByRun: new Map() }));
+
 vi.mock("@/components/transcript/useLiveRunTranscripts", () => ({
-  useLiveRunTranscripts: () => ({ transcriptByRun: new Map() }),
+  useLiveRunTranscripts: () => transcriptState,
 }));
 vi.mock("@/context/SidebarContext", () => ({
   useSidebar: () => ({ isMobile: false }),
@@ -31,6 +34,7 @@ let root: Root | null = null;
 
 beforeEach(() => {
   localStorage.clear();
+  transcriptState.transcriptByRun.clear();
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
@@ -44,7 +48,7 @@ afterEach(() => {
 });
 
 function render(ui: ReactElement) {
-  flushSync(() => root!.render(ui));
+  flushSync(() => root!.render(<ThemeProvider>{ui}</ThemeProvider>));
 }
 
 describe("TaskChatThread draft pass-through", () => {
@@ -61,5 +65,42 @@ describe("TaskChatThread draft pass-through", () => {
 
     expect(container.querySelector('[data-testid="mock-editor"]')?.textContent)
       .toBe("half-written thought");
+  });
+});
+
+describe("TaskChatThread live transcript", () => {
+  it("renders in-flight output with RunTranscriptView", () => {
+    transcriptState.transcriptByRun.set("run-1", [
+      {
+        kind: "assistant",
+        ts: "2026-08-07T00:00:00.000Z",
+        text: "Streaming through the shared renderer",
+      },
+    ]);
+
+    render(
+      <TaskChatThread
+        comments={[]}
+        onAdd={async () => {}}
+        issueStatus="in_progress"
+        activeRun={{
+          id: "run-1",
+          status: "running",
+          invocationSource: "issue",
+          triggerDetail: null,
+          startedAt: "2026-08-07T00:00:00.000Z",
+          finishedAt: null,
+          createdAt: "2026-08-07T00:00:00.000Z",
+          agentId: "agent-1",
+          agentName: "Coder",
+          adapterType: "codex_local",
+        }}
+      />,
+    );
+
+    expect(
+      container.querySelector('[data-testid="task-chat-live-transcript"]'),
+    ).not.toBeNull();
+    expect(container.textContent).toContain("Streaming through the shared renderer");
   });
 });

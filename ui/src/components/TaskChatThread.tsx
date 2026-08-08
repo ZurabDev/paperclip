@@ -62,11 +62,11 @@ const SETTLING_TAIL_MAX_MS = 15_000;
 export type TaskChatThreadProps = ComponentProps<typeof IssueChatThread>;
 
 /**
- * Task Chat Redesign thread (experimental flag: `enableTaskChatRedesign`).
+ * Chat-style task thread — the default task detail experience.
  *
- * Renders the redesigned, Claude-Code-style thread for the live task. It shares
- * IssueChatThread's exact prop type — so the IssueDetail seam ternary
- * (`redesign ? TaskChatThread : IssueChatThread`) type-checks with no casts.
+ * Renders the Claude-Code-style thread for the live task. It shares
+ * IssueChatThread's exact prop type, so hosts can swap between the two with no
+ * casts.
  *
  * Two data sources feed the render layer, both reused from the existing thread:
  *   - the comment stream (incl. optimistic echoes) → author-typed bubbles, and

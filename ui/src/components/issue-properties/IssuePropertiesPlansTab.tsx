@@ -27,11 +27,11 @@ function hasPendingPlanConfirmation(interactions: IssueThreadInteraction[] | und
 }
 
 /**
- * Plans tab of the redesigned properties pane (flag: enableTaskChatRedesign).
+ * Plans tab of the properties pane.
  *
- * Owns the plan surface with the flag ON: the `plan` document itself (formerly
- * pinned above the tabs via IssueDocumentsSection, which the chat shell gates
- * off) rendered above the accepted-plan decomposition history. Structured live
+ * Owns the plan surface: the `plan` document itself (formerly pinned above
+ * the tabs via IssueDocumentsSection, which the chat shell gates off)
+ * rendered above the accepted-plan decomposition history. Structured live
  * PlanEntry/todo streaming is a flagged protocol dependency (demonstrated in
  * the /dev/task-chat-lab harness).
  */

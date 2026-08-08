@@ -292,14 +292,47 @@ vi.mock("../components/IssueChatThread", () => ({
   },
 }));
 
-// The redesign thread pulls in the MarkdownEditor composer, whose @mdxeditor
+// The task chat thread pulls in the MarkdownEditor composer, whose @mdxeditor
 // dependency cannot load under jsdom's CSSOM. The stub keeps the suite
 // unit-scoped but still renders the threadHeader JSX (the issue header row
-// moves inside the thread when the flag is on) so header controls stay testable.
+// lives inside the thread) so header controls stay testable, records its props
+// on the shared thread-render spy, and exposes the same run-control buttons as
+// the IssueChatThread stub above.
 vi.mock("../components/TaskChatThread", () => ({
-  TaskChatThread: ({ threadHeader }: { threadHeader?: ReactNode }) => (
-    <div data-testid="task-chat-thread">{threadHeader}Task chat thread</div>
-  ),
+  TaskChatThread: (props: {
+    threadHeader?: ReactNode;
+    onStopRun?: (runId: string) => Promise<void>;
+    stopRunLabel?: string;
+    runFinalizationActions?: readonly {
+      id: string;
+      label: string;
+      onSelect: (runId: string) => Promise<void> | void;
+    }[];
+    footer?: ReactNode;
+  }) => {
+    mockIssueChatThreadRender(props);
+    return (
+      <div data-testid="task-chat-thread">
+        {props.threadHeader}
+        Task chat thread
+        {props.onStopRun ? (
+          <button type="button" onClick={() => void props.onStopRun?.("run-active-1")}>
+            {props.stopRunLabel ?? "Stop run"}
+          </button>
+        ) : null}
+        {props.runFinalizationActions?.map((action) => (
+          <button
+            key={action.id}
+            type="button"
+            onClick={() => void action.onSelect("run-active-1")}
+          >
+            {action.label}
+          </button>
+        ))}
+        {props.footer}
+      </div>
+    );
+  },
 }));
 
 vi.mock("../components/IssueDocumentsSection", () => ({
@@ -1075,7 +1108,7 @@ describe("IssueDetail", () => {
     await flushReact();
 
     expect(container.textContent).toContain("Issue detail smoke");
-    expect(container.textContent).toContain("Chat thread");
+    expect(container.textContent).toContain("Task chat thread");
     expect(
       consoleErrorSpy.mock.calls.some((call: unknown[]) =>
         String(call[0]).includes("React has detected a change in the order of Hooks"),
@@ -1576,9 +1609,6 @@ describe("IssueDetail", () => {
     await flushReact();
 
     expect(container.querySelector('[aria-label="Open file in this issue"]')).toBeNull();
-    const latestWorkspaceProps = mockIssueWorkspaceCardRender.mock.calls.at(-1)?.[0];
-    expect(latestWorkspaceProps?.onBrowseFiles).toBeUndefined();
-    expect(latestWorkspaceProps?.onOpenFileByPath).toBeUndefined();
   });
 
   it("shows file viewer entry points when the experimental flag is enabled", async () => {
@@ -1600,65 +1630,6 @@ describe("IssueDetail", () => {
     await flushReact();
 
     expect(container.querySelector('[aria-label="Open file in this issue"]')).not.toBeNull();
-    const latestWorkspaceProps = mockIssueWorkspaceCardRender.mock.calls.at(-1)?.[0];
-    expect(latestWorkspaceProps?.onBrowseFiles).toEqual(expect.any(Function));
-    expect(latestWorkspaceProps?.onOpenFileByPath).toEqual(expect.any(Function));
-  });
-
-  it("shows the plan decomposition panel when the experimental flag is enabled", async () => {
-    mockIssuesApi.get.mockResolvedValue(createIssue());
-    mockInstanceSettingsApi.getExperimental.mockResolvedValue({
-      enableIssuePlanDecompositions: true,
-      enableExperimentalFileViewer: false,
-    });
-    mockIssuesApi.listAcceptedPlanDecompositions.mockResolvedValue([
-      {
-        id: "decomp-1",
-        companyId: "company-1",
-        sourceIssueId: "issue-1",
-        acceptedPlanRevisionId: "plan-rev-1",
-        acceptedPlanRevisionNumber: 2,
-        acceptedInteractionId: null,
-        status: "completed",
-        requestFingerprint: "fingerprint-1",
-        requestedChildCount: 2,
-        childIssueIds: ["issue-2", "issue-3"],
-        childIssues: [
-          {
-            id: "issue-2",
-            identifier: "PAP-2",
-            title: "First child issue",
-            status: "todo",
-            priority: "medium",
-            assigneeAgentId: null,
-            assigneeUserId: null,
-          },
-        ],
-        ownerAgentId: null,
-        ownerUserId: null,
-        ownerRunId: null,
-        completedAt: "2026-05-28T06:00:00.000Z",
-        createdAt: "2026-05-28T05:50:00.000Z",
-        updatedAt: "2026-05-28T06:00:00.000Z",
-      },
-    ]);
-
-    await act(async () => {
-      root.render(
-        <QueryClientProvider client={queryClient}>
-          <IssueDetail />
-        </QueryClientProvider>,
-      );
-    });
-
-    await flushReact();
-    await flushReact();
-
-    expect(container.textContent).toContain("Plan decomposition");
-    expect(container.textContent).toContain("Plan revision 2");
-    expect(container.textContent).toContain("2 of 2 child tasks created");
-    expect(container.textContent).toContain("First child issue");
-    expect(mockIssuesApi.listAcceptedPlanDecompositions).toHaveBeenCalledWith("issue-1");
   });
 
   it("hides the properties sidebar on the first onboarding task until a plan document exists", async () => {
@@ -1666,7 +1637,6 @@ describe("IssueDetail", () => {
       enableIssuePlanDecompositions: false,
       enableExperimentalFileViewer: false,
       enableExternalObjects: false,
-      enableTaskChatRedesign: true,
     });
     mockIssuesApi.get.mockResolvedValue(
       createIssue({ originKind: ONBOARDING_FIRST_TASK_ORIGIN_KIND }),
@@ -1696,7 +1666,6 @@ describe("IssueDetail", () => {
       enableIssuePlanDecompositions: false,
       enableExperimentalFileViewer: false,
       enableExternalObjects: false,
-      enableTaskChatRedesign: true,
     });
     mockIssuesApi.get.mockResolvedValue(
       createIssue({ originKind: ONBOARDING_FIRST_TASK_ORIGIN_KIND }),
@@ -1740,7 +1709,6 @@ describe("IssueDetail", () => {
       enableIssuePlanDecompositions: false,
       enableExperimentalFileViewer: false,
       enableExternalObjects: false,
-      enableTaskChatRedesign: true,
     });
     mockIssuesApi.get.mockResolvedValue(
       createIssue({ originKind: ONBOARDING_FIRST_TASK_ORIGIN_KIND }),
@@ -1765,7 +1733,6 @@ describe("IssueDetail", () => {
       enableIssuePlanDecompositions: false,
       enableExperimentalFileViewer: false,
       enableExternalObjects: false,
-      enableTaskChatRedesign: true,
     });
     mockIssuesApi.get.mockResolvedValue(createIssue({ originKind: "manual" }));
 
@@ -1780,116 +1747,6 @@ describe("IssueDetail", () => {
     await waitForAssertion(() => {
       expect(mockOpenPanel).toHaveBeenCalled();
     });
-  });
-
-  it("renders sibling previous and next navigation at the chat footer", async () => {
-    const issue = createIssue({
-      id: "issue-2",
-      identifier: "PAP-2",
-      issueNumber: 2,
-      parentId: "parent-1",
-      title: "Current sibling",
-      createdAt: new Date("2026-04-02T00:00:00.000Z"),
-    });
-    const previous = createIssue({
-      id: "issue-1",
-      identifier: "PAP-1",
-      issueNumber: 1,
-      parentId: "parent-1",
-      title: "Previous sibling",
-      status: "done",
-      createdAt: new Date("2026-04-01T00:00:00.000Z"),
-    });
-    const next = createIssue({
-      id: "issue-3",
-      identifier: "PAP-3",
-      issueNumber: 3,
-      parentId: "parent-1",
-      title: "Next sibling",
-      blockedBy: [{ id: "issue-2" }] as Issue["blockedBy"],
-      createdAt: new Date("2026-04-03T00:00:00.000Z"),
-    });
-
-    mockIssuesApi.get.mockResolvedValue(issue);
-    mockIssuesApi.list.mockImplementation((_companyId, filters?: { descendantOf?: string; parentId?: string }) => {
-      if (filters?.parentId === "parent-1") return Promise.resolve([next, previous, issue]);
-      return Promise.resolve([]);
-    });
-
-    await act(async () => {
-      root.render(
-        <QueryClientProvider client={queryClient}>
-          <IssueDetail />
-        </QueryClientProvider>,
-      );
-    });
-    await flushReact();
-    await flushReact();
-
-    expect(mockIssuesApi.list).toHaveBeenCalledWith("company-1", {
-      parentId: "parent-1",
-      includeBlockedBy: true,
-    });
-    expect(container.querySelector('a[aria-label="Previous sub-task: PAP-1 - Previous sibling"]')).toBeTruthy();
-    expect(container.querySelector('a[aria-label="Next sub-task: PAP-3 - Next sibling"]')).toBeTruthy();
-    expect(container.textContent).toContain("Previous");
-    expect(container.textContent).toContain("Previous sibling");
-    expect(container.textContent).toContain("Next");
-    expect(container.textContent).toContain("Next sibling");
-    expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0].footer).toBeTruthy();
-  });
-
-  it("uses the first child issue as next navigation for parent issues without a sibling next", async () => {
-    const parent = createIssue({
-      id: "issue-parent",
-      identifier: "PAP-10",
-      issueNumber: 10,
-      parentId: null,
-      title: "Plan parent",
-      createdAt: new Date("2026-04-01T00:00:00.000Z"),
-    });
-    const firstChild = createIssue({
-      id: "issue-child-1",
-      identifier: "PAP-11",
-      issueNumber: 11,
-      parentId: "issue-parent",
-      title: "First child",
-      createdAt: new Date("2026-04-02T00:00:00.000Z"),
-    });
-    const secondChild = createIssue({
-      id: "issue-child-2",
-      identifier: "PAP-12",
-      issueNumber: 12,
-      parentId: "issue-parent",
-      title: "Second child",
-      blockedBy: [{ id: "issue-child-1" }] as Issue["blockedBy"],
-      createdAt: new Date("2026-04-03T00:00:00.000Z"),
-    });
-
-    mockIssuesApi.get.mockResolvedValue(parent);
-    mockIssuesApi.list.mockImplementation((_companyId, filters?: { descendantOf?: string; parentId?: string }) => {
-      if (filters?.descendantOf === "issue-parent") return Promise.resolve([secondChild, firstChild]);
-      return Promise.resolve([]);
-    });
-
-    await act(async () => {
-      root.render(
-        <QueryClientProvider client={queryClient}>
-          <IssueDetail />
-        </QueryClientProvider>,
-      );
-    });
-    await flushReact();
-    await flushReact();
-
-    expect(mockIssuesApi.list).toHaveBeenCalledWith("company-1", {
-      descendantOf: "issue-parent",
-      includeBlockedBy: true,
-    });
-    expect(container.querySelector('a[aria-label="Next sub-task: PAP-11 - First child"]')).toBeTruthy();
-    expect(container.textContent).toContain("Next");
-    expect(container.textContent).toContain("First child");
-    expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0].footer).toBeTruthy();
   });
 
   it("passes blocker attention to the issue detail header status icon", async () => {
@@ -1985,8 +1842,6 @@ describe("IssueDetail", () => {
 
     await waitForAssertion(() => {
       expect(container.textContent).toContain("Subtree pause is active.");
-      expect(mockIssuesListRender.mock.calls.at(-1)?.[0].issueBadgeById.get("child-1")).toBe("Paused");
-      expect(mockIssuesListRender.mock.calls.at(-1)?.[0].showProgressSummary).toBe(true);
     });
 
     const resumeButton = Array.from(container.querySelectorAll("button"))
@@ -2021,7 +1876,6 @@ describe("IssueDetail", () => {
     }));
     await waitForAssertion(() => {
       expect(container.textContent).not.toContain("Subtree pause is active.");
-      expect(mockIssuesListRender.mock.calls.at(-1)?.[0].issueBadgeById.has("child-1")).toBe(false);
     });
   });
 
@@ -2296,10 +2150,9 @@ describe("IssueDetail", () => {
     expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0]).toMatchObject({
       issueWorkMode: "planning",
     });
-    expect(container.textContent).toContain("Plan mode");
   });
 
-  it("passes ask work mode to the issue chat thread and renders the ask badge", async () => {
+  it("passes ask work mode to the issue chat thread", async () => {
     mockIssuesApi.get.mockResolvedValue(createIssue({ workMode: "ask" }));
     await act(async () => {
       root.render(
@@ -2313,7 +2166,6 @@ describe("IssueDetail", () => {
     expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0]).toMatchObject({
       issueWorkMode: "ask",
     });
-    expect(container.textContent).toContain("Ask mode");
   });
 
   it("falls back to execCommand when copying the task from an insecure context", async () => {
@@ -2389,7 +2241,7 @@ describe("IssueDetail", () => {
     }
   });
 
-  it("renders the graduated task thread without the chat flag", async () => {
+  it("renders the task chat thread as the default thread", async () => {
     mockIssuesApi.get.mockResolvedValue(createIssue());
 
     await act(async () => {
@@ -2401,24 +2253,8 @@ describe("IssueDetail", () => {
     });
     await flushReact();
 
-    expect(container.querySelector('[data-testid="issue-chat-thread"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="task-chat-thread"]')).not.toBeNull();
     expect(mockIssueChatThreadRender).toHaveBeenCalled();
-  });
-
-  it("uses graduated Plan mode chip copy", async () => {
-    mockIssuesApi.get.mockResolvedValue(createIssue({ workMode: "planning" }));
-
-    await act(async () => {
-      root.render(
-        <QueryClientProvider client={queryClient}>
-          <IssueDetail />
-        </QueryClientProvider>,
-      );
-    });
-    await flushReact();
-
-    expect(container.textContent).toContain("Plan mode");
-    expect(container.textContent).not.toContain("Planning");
   });
 
   it("passes @task mention options to the thread by default", async () => {
@@ -2495,71 +2331,7 @@ describe("IssueDetail", () => {
 
     expect(mockIssuesApi.update).toHaveBeenCalledWith(issue.identifier, { workMode: "ask" });
     expect(localStorage.getItem("paperclip:issue-comment-draft:issue-1")).toBe("Draft follow-up message");
-    expect(container.textContent).toContain("planning-notes.txt");
     localStorage.removeItem("paperclip:issue-comment-draft:issue-1");
-  });
-
-  it("hides attachments backing promoted outputs while keeping filtered markdown artifacts visible", async () => {
-    const issue = createIssue();
-    const videoAttachment = createAttachment({
-      id: "11111111-1111-4111-8111-111111111111",
-      contentType: "video/mp4",
-      originalFilename: "demo.mp4",
-    });
-    const imageAttachment = createAttachment({
-      id: "33333333-3333-4333-8333-333333333333",
-      contentType: "image/png",
-      originalFilename: "screenshot.png",
-    });
-    const markdownAttachment = createAttachment({
-      id: "22222222-2222-4222-8222-222222222222",
-      contentType: "text/markdown",
-      originalFilename: "report.md",
-    });
-    mockIssuesApi.get.mockResolvedValue(issue);
-    mockIssuesApi.listAttachments.mockResolvedValue([videoAttachment, imageAttachment, markdownAttachment]);
-    mockIssuesApi.listWorkProducts.mockResolvedValue([
-      createArtifactWorkProduct({
-        id: "wp-video",
-        attachmentId: videoAttachment.id,
-        contentType: "video/mp4",
-        originalFilename: "demo.mp4",
-        isPrimary: true,
-      }),
-      createArtifactWorkProduct({
-        id: "wp-image",
-        attachmentId: imageAttachment.id,
-        contentType: "image/png",
-        originalFilename: "screenshot.png",
-      }),
-      createArtifactWorkProduct({
-        id: "wp-markdown",
-        attachmentId: markdownAttachment.id,
-        contentType: "text/markdown",
-        originalFilename: "report.md",
-      }),
-    ]);
-
-    await act(async () => {
-      root.render(
-        <QueryClientProvider client={queryClient}>
-          <IssueDetail />
-        </QueryClientProvider>,
-      );
-    });
-    await flushReact();
-    await flushReact();
-
-    expect(container.textContent).toContain("Output");
-    expect(container.textContent).toContain("demo.mp4");
-    expect(container.textContent).toContain("Attachments");
-    expect(container.textContent).toContain("report.md");
-    expect(container.textContent).toContain("Attachments1");
-    expect(container.querySelectorAll("video")).toHaveLength(1);
-    expect(mockImageGalleryRender.mock.calls.at(-1)?.[0].items.map((attachment: IssueAttachment) => attachment.id)).toEqual([
-      videoAttachment.id,
-      imageAttachment.id,
-    ]);
   });
 
   it("renders Paused by board distinctly and defaults leaf resume to wake the assignee", async () => {

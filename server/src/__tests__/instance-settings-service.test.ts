@@ -29,7 +29,6 @@ describe("instance settings service", () => {
       enableStreamlinedLeftNavigation: true,
       enableApps: false,
       enableConferenceRoomChat: false,
-      enableTaskChatRedesign: false,
       enableExternalObjects: false,
       enableSmokeLab: false,
       enablePipelines: false,

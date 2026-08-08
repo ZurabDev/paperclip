@@ -92,7 +92,6 @@ import {
 } from "../components/IssueChatThread";
 import { TaskChatThread } from "../components/TaskChatThread";
 import type { TaskChatIssueBrief } from "../components/task-chat/TaskChatDescriptionBubble";
-import { useTaskChatRedesignEnabled } from "../hooks/useTaskChatRedesignEnabled";
 import { workModeMetaFor } from "../lib/work-mode-meta";
 import { IssueContinuationHandoff } from "../components/IssueContinuationHandoff";
 import { IssueAttachmentsSection } from "../components/IssueAttachmentsSection";
@@ -692,16 +691,9 @@ function IssueDetailLoadingState({
   headerSeed: ReturnType<typeof readIssueDetailHeaderSeed>;
 }) {
   const identifier = headerSeed?.identifier ?? headerSeed?.id.slice(0, 8) ?? null;
-  const { enabled: taskChatShellEnabled } = useTaskChatRedesignEnabled();
 
   return (
-    <div
-      className={
-        taskChatShellEnabled
-          ? "mx-auto w-full max-w-(--tc-shell-max-w) space-y-6"
-          : "max-w-3xl space-y-6"
-      }
-    >
+    <div className="mx-auto w-full max-w-(--tc-shell-max-w) space-y-6">
       <div className="space-y-3">
         <Skeleton className="h-3 w-40" />
 
@@ -917,9 +909,8 @@ type IssueDetailChatTabProps = {
   /** Optional node rendered inline directly above the reply composer (e.g. the monitor strip). */
   composerAccessory?: ReactNode;
   /**
-   * Issue header (title row, badges, plugin toolbars) that the redesigned
-   * thread renders inside its scroll viewport so it scrolls away with the
-   * messages (flag: enableTaskChatRedesign). Ignored by the legacy thread.
+   * Issue header (title row, badges, plugin toolbars) that the thread renders
+   * inside its scroll viewport so it scrolls away with the messages.
    */
   threadHeader?: ReactNode;
   /**
@@ -1058,11 +1049,7 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
   externalReferences,
   linkCaseReferences,
 }: IssueDetailChatTabProps) {
-  // Seam for the Task Chat Redesign (flag: enableTaskChatRedesign). Flag OFF
-  // renders IssueChatThread verbatim — the flag-off branch is provably today's
-  // UI. Both components share one prop type, so no cast is needed.
-  const { enabled: taskChatRedesignEnabled } = useTaskChatRedesignEnabled();
-  const ThreadComponent = taskChatRedesignEnabled ? TaskChatThread : IssueChatThread;
+  const ThreadComponent = TaskChatThread;
   const { data: activity } = useQuery({
     queryKey: queryKeys.issues.activity(issueId),
     queryFn: () => activityApi.forIssue(issueId),
@@ -1217,10 +1204,7 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
   ) : null;
 
   return (
-    <div className={taskChatRedesignEnabled ? "flex min-h-0 flex-1 flex-col" : "space-y-3"}>
-      {/* Redesign: the button rides inside the thread's scroll viewport with the
-          header so nothing sits above the thread in the page flow. */}
-      {taskChatRedesignEnabled ? null : loadOlderButton}
+    <div className="flex min-h-0 flex-1 flex-col">
       {commentsInitialLoading && commentsWithRunMeta.length === 0 && interactions.length === 0 ? (
         <IssueChatSkeleton />
       ) : (
@@ -1228,7 +1212,7 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
         composerRef={composerRef}
         composerAccessory={composerAccessory}
         threadHeader={
-          taskChatRedesignEnabled && (threadHeader || loadOlderButton) ? (
+          threadHeader || loadOlderButton ? (
             <>
               {threadHeader}
               {loadOlderButton}
@@ -1606,18 +1590,11 @@ function IssueDetailActivityTab({
 export function IssueDetail() {
   const { issueId } = useParams<{ issueId: string }>();
   const { selectedCompanyId } = useCompany();
-  // Task Chat Redesign (flag: enableTaskChatRedesign): with the flag ON the
-  // thread owns the center column — the legacy title/description block,
-  // sub-tasks table, plan decompositions and Documents section are gated off
-  // (plan lives in the properties-pane Plan tab). Flag OFF renders the legacy
-  // page byte-identically.
-  const { enabled: taskChatShellEnabled } = useTaskChatRedesignEnabled();
-  // Flag ON the page wrapper spans the full center pane so the thread's scroll
-  // viewport (and its scrollbar) reaches the properties-pane border; every
-  // non-thread section re-centers itself at the 60rem shell cap instead.
-  const shellSectionClass = taskChatShellEnabled
-    ? "mx-auto w-full max-w-(--tc-shell-max-w)"
-    : undefined;
+  // The thread owns the center column — the page wrapper spans the full
+  // center pane so the thread's scroll viewport (and its scrollbar) reaches
+  // the properties-pane border; every non-thread section re-centers itself at
+  // the 60rem shell cap instead.
+  const shellSectionClass = "mx-auto w-full max-w-(--tc-shell-max-w)";
   const { openNewIssue } = useDialogActions();
   const { openPanel, closePanel, panelVisible, setPanelVisible } = usePanel();
   const { setBreadcrumbs, setMobileToolbar } = useBreadcrumbs();
@@ -1632,9 +1609,9 @@ export function IssueDetail() {
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
   const [fileViewerPromptOpen, setFileViewerPromptOpen] = useState(false);
   const [detailTab, setDetailTab] = useState("chat");
-  // Redesign: the center tab strip is hidden, so chat is the only surface —
-  // deep links that would switch tabs (e.g. #document- hashes) stay on chat.
-  const resolvedDetailTab = taskChatShellEnabled ? "chat" : detailTab;
+  // The center tab strip is hidden, so chat is the only surface — deep links
+  // that would switch tabs (e.g. #document- hashes) stay on chat.
+  const resolvedDetailTab = "chat";
   const [handoffFocusSignal, setHandoffFocusSignal] = useState(0);
   const [pendingApprovalAction, setPendingApprovalAction] = useState<{
     approvalId: string;
@@ -2007,7 +1984,6 @@ export function IssueDetail() {
   // can still opt in early via the "Show properties" header button, which sets a
   // per-issue override (keyed on the issue id so it resets across navigations).
   const isOnboardingFirstTask =
-    taskChatShellEnabled &&
     issue?.originKind === ONBOARDING_FIRST_TASK_ORIGIN_KIND;
   const { data: firstTaskPlanDoc } = useIssuePlanDocument(
     isOnboardingFirstTask ? issue?.id : null,
@@ -4184,11 +4160,9 @@ export function IssueDetail() {
     </>
   );
 
-  // Task Chat Redesign ("not sticky" header): the parent breadcrumb, the
-  // title/badge block, and the plugin toolbars render INSIDE the thread's
-  // scroll viewport, so they scroll away with the messages and the composer
-  // stays near the viewport bottom. Flag OFF renders the same nodes in the
-  // page flow, in their original order relative to the alert banners.
+  // "Not sticky" header: the parent breadcrumb, the title/badge block, and the
+  // plugin toolbars render INSIDE the thread's scroll viewport, so they scroll
+  // away with the messages and the composer stays near the viewport bottom.
   const ancestorsNav = ancestors.length > 0 && (
         <nav className={cn("flex items-center gap-1 text-xs text-muted-foreground flex-wrap", shellSectionClass)}>
           {[...ancestors].reverse().map((ancestor, i) => (
@@ -4278,23 +4252,9 @@ export function IssueDetail() {
             </Badge>
           ) : null}
 
-          {/* Task Chat Redesign: no mode chip in the header — mode is a
-              per-request choice made in the composer, and each agent reply
-              carries its own mode chip; a header chip would misread as a
-              task-global setting. Flag OFF keeps the legacy badge. */}
-          {!taskChatShellEnabled && (issue.workMode === "ask" || issue.workMode === "planning") ? (() => {
-            const workModeMeta = workModeMetaFor(issue.workMode);
-            const WorkModeIcon = workModeMeta.icon;
-            return (
-              <Badge variant="outline"
-                className={cn("text-(length:--text-nano)", workModeMeta.classes.badge)}
-                title={`This task is in ${workModeMeta.label.toLowerCase()}.`}
-              >
-                <WorkModeIcon className="h-3 w-3" aria-hidden />
-                {workModeMeta.label}
-              </Badge>
-            );
-          })() : null}
+          {/* No mode chip in the header — mode is a per-request choice made in
+              the composer, and each agent reply carries its own mode chip; a
+              header chip would misread as a task-global setting. */}
 
           {hasAssignedBacklogBlocker(issue.blockedBy) ? (
             <Badge variant="outline"
@@ -4558,7 +4518,7 @@ export function IssueDetail() {
           value={issue.title}
           onSave={(title) => updateIssue.mutateAsync({ title })}
           as="h2"
-          className={taskChatShellEnabled ? "text-base font-semibold" : "text-xl font-bold"}
+          className="text-base font-semibold"
         />
 
         <IssueMonitorBanner
@@ -4567,26 +4527,6 @@ export function IssueDetail() {
           checkingNow={checkIssueMonitorNow.isPending}
         />
 
-        {taskChatShellEnabled ? null : (
-          <InlineEditor
-            value={issue.description ?? ""}
-            onSave={(description) => updateIssue.mutateAsync({ description })}
-            as="p"
-            className="text-sm leading-7 text-foreground"
-            placeholder="Add a description..."
-            multiline
-            foldable
-            mentions={mentionOptions}
-            externalReferences={externalObjectsState.isEnabled ? externalObjectsState.markdownReferences : undefined}
-            imageUploadHandler={async (file) => {
-              const attachment = await uploadAttachment.mutateAsync(file);
-              return attachment.contentPath;
-            }}
-            onDropFile={async (file) => {
-              await uploadAttachment.mutateAsync(file);
-            }}
-          />
-        )}
       </div>
   );
 
@@ -4635,32 +4575,27 @@ export function IssueDetail() {
     </>
   );
 
-  const taskChatThreadHeader = taskChatShellEnabled ? (
+  const taskChatThreadHeader = (
     <>
       {ancestorsNav}
       {issueHeaderBlock}
       {pluginOutletsBlock}
     </>
-  ) : undefined;
+  );
 
   return (
     <FileViewerProvider issueId={issue.id} enabled={fileViewerEnabled}>
     <div
       className={
-        taskChatShellEnabled
-          ? isMobile
-            ? // Mobile shell scrolls the DOCUMENT (main is overflow-visible,
-              // auto height) — the thread renders in normal flow (PAP-360).
-              "flex w-full flex-col gap-6"
-            : // Fill main exactly so the outer page never scrolls — the
-              // thread's own viewport is the only scroll surface.
-              "flex h-full min-h-0 w-full flex-col gap-6"
-          : "max-w-3xl space-y-6"
+        isMobile
+          ? // Mobile shell scrolls the DOCUMENT (main is overflow-visible,
+            // auto height) — the thread renders in normal flow (PAP-360).
+            "flex w-full flex-col gap-6"
+          : // Fill main exactly so the outer page never scrolls — the
+            // thread's own viewport is the only scroll surface.
+            "flex h-full min-h-0 w-full flex-col gap-6"
       }
     >
-      {/* Parent chain breadcrumb (redesign: rendered inside the thread viewport) */}
-      {taskChatShellEnabled ? null : ancestorsNav}
-
       {issue.hiddenAt && (
         <div className={cn("flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive", shellSectionClass)}>
           <EyeOff className="h-4 w-4 shrink-0" />
@@ -4743,132 +4678,8 @@ export function IssueDetail() {
         </div>
       )}
 
-      {taskChatShellEnabled ? null : issueHeaderBlock}
-
-      {taskChatShellEnabled ? null : pluginOutletsBlock}
-
-      {taskChatShellEnabled ? null : showRichSubIssuesSection ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Sub-tasks</h3>
-          </div>
-          <IssuesList
-            issues={childIssues}
-            isLoading={childIssuesLoading}
-            agents={agents}
-            projects={projects}
-            liveIssueIds={liveIssueIds}
-            mutedIssueIds={mutedChildIssueIds}
-            issueBadgeById={childPauseBadgeById}
-            projectId={issue.projectId ?? undefined}
-            viewStateKey={`paperclip:issue-detail:${issue.id}:subissues-view`}
-            issueLinkState={resolvedIssueDetailState ?? location.state}
-            searchFilters={{ descendantOf: issue.id, includeBlockedBy: true }}
-            searchWithinLoadedIssues
-            baseCreateIssueDefaults={buildSubIssueDefaultsForViewer(issue, currentUserId)}
-            createIssueLabel="Sub-task"
-            defaultSortField="workflow"
-            showProgressSummary
-            parentIssueIdForCostSummary={issue.id}
-            onUpdateIssue={handleChildIssueUpdate}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
-          <Button variant="outline" size="sm" onClick={openNewSubIssue} className="shrink-0 shadow-none">
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            New Sub-task
-          </Button>
-        </div>
-      )}
-
-      {!taskChatShellEnabled && showPlanDecompositionsSection ? (
-        <IssuePlanDecompositionsSection
-          issueId={issue.id}
-          issueIdentifier={issue.identifier}
-          agentMap={agentMap}
-        />
-      ) : null}
-
-      {/* Flag ON: attachments/work products/workspace live in the properties
-          pane (Artifacts tab) — the center column belongs to the thread. */}
-      {taskChatShellEnabled ? null : (
-      <IssueDocumentsSection
-        issue={issue}
-        canDeleteDocuments={Boolean(session?.user?.id)}
-        canManageDocumentLocks={Boolean(session?.user?.id)}
-        feedbackVotes={feedbackVotes}
-        feedbackDataSharingPreference={feedbackDataSharingPreference}
-        feedbackTermsUrl={FEEDBACK_TERMS_URL}
-        mentions={mentionOptions}
-        externalReferences={externalObjectsState.isEnabled ? externalObjectsState.markdownReferences : undefined}
-        imageUploadHandler={async (file) => {
-          const attachment = await uploadAttachment.mutateAsync(file);
-          return attachment.contentPath;
-        }}
-        onVote={async (revisionId, vote, options) => {
-          await feedbackVoteMutation.mutateAsync({
-            targetType: "issue_document_revision",
-            targetId: revisionId,
-            vote,
-            reason: options?.reason,
-            allowSharing: options?.allowSharing,
-            sharingPreferenceAtSubmit: feedbackDataSharingPreference,
-          });
-        }}
-        extraActions={!hasAttachments ? attachmentUploadButton : null}
-        agentMap={agentMap}
-        userProfileMap={userProfileMap}
-      />
-      )}
-
-      {taskChatShellEnabled ? null : (
-      <IssueOutputSection
-        workProducts={workProducts}
-        onMediaClick={(item) => {
-          const meta = item.metadata;
-          if (!meta) return;
-          const idx = mediaGalleryItems.findIndex((galleryItem) => (
-            galleryItem.contentPath === meta.contentPath ||
-            galleryItem.id === `work-product-${item.id}` ||
-            galleryItem.id === meta.attachmentId
-          ));
-          setGalleryIndex(idx >= 0 ? idx : 0);
-          setGalleryOpen(true);
-        }}
-      />
-      )}
-
-      {taskChatShellEnabled ? null : attachmentsInitialLoading ? (
-        <IssueSectionSkeleton titleWidth="w-24" rows={2} />
-      ) : hasAttachments ? (
-        <IssueAttachmentsSection
-          attachments={attachmentList}
-          uploadButton={attachmentUploadButton}
-          error={attachmentError}
-          dragActive={attachmentDragActive}
-          deletePending={deleteAttachment.isPending}
-          onDelete={(attachmentId) => deleteAttachment.mutate(attachmentId)}
-          onImageClick={(attachment) => {
-            const idx = mediaGalleryItems.findIndex((a) => a.id === attachment.id);
-            setGalleryIndex(idx >= 0 ? idx : 0);
-            setGalleryOpen(true);
-          }}
-          onDragEnter={(evt) => {
-            evt.preventDefault();
-            setAttachmentDragActive(true);
-          }}
-          onDragOver={(evt) => {
-            evt.preventDefault();
-            setAttachmentDragActive(true);
-          }}
-          onDragLeave={(evt) => {
-            if (evt.currentTarget.contains(evt.relatedTarget as Node | null)) return;
-            setAttachmentDragActive(false);
-          }}
-          onDrop={(evt) => void handleAttachmentDrop(evt)}
-        />
-      ) : null}
+      {/* Attachments/work products/workspace live in the properties pane
+          (Artifacts tab) — the center column belongs to the thread. */}
 
       <ImageGalleryModal
         items={mediaGalleryItems}
@@ -4877,84 +4688,20 @@ export function IssueDetail() {
         onOpenChange={setGalleryOpen}
       />
 
-      {taskChatShellEnabled ? null : (
-      <IssueWorkspaceCard
-        issue={issue}
-        project={resolvedProject}
-        onUpdate={(data) => updateIssue.mutate(data)}
-        onBrowseFiles={fileViewerEnabled ? () => setFileViewerPromptOpen(true) : undefined}
-        onOpenFileByPath={fileViewerEnabled ? () => setFileViewerPromptOpen(true) : undefined}
-      />
-      )}
-
-      {!taskChatShellEnabled && fileViewerEnabled && issue.workProducts && issue.workProducts.length > 0 && (() => {
-        const workProductsWithFileRefs = issue.workProducts
-          .map((product) => ({ product, fileRef: extractWorkspaceFileRefFromWorkProduct(product) }))
-          .filter(({ fileRef }) => fileRef !== null);
-
-        if (workProductsWithFileRefs.length === 0) return null;
-
-        return (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-medium text-muted-foreground">Artifacts</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {workProductsWithFileRefs.map(({ product, fileRef }) => (
-                <ArtifactFileChip
-                  key={product.id}
-                  workspaceFileRef={fileRef!}
-                  title={product.title}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      {taskChatShellEnabled ? null : <Separator className={shellSectionClass} />}
-
       <Tabs
         value={resolvedDetailTab}
         onValueChange={setDetailTab}
-        className={taskChatShellEnabled ? (isMobile ? undefined : "min-h-0 flex-1") : "space-y-3"}
+        className={isMobile ? undefined : "min-h-0 flex-1"}
       >
-        {/* Redesign: the chat IS the page — the Chat/Activity/Related-work tab
-            strip is hidden and the thread renders as the only surface. */}
-        {taskChatShellEnabled ? null : (
-        <TabsList variant="line" className={cn("w-full justify-start gap-1", shellSectionClass)}>
-          <TabsTrigger value="chat" className="gap-1.5">
-            <MessageSquare className="h-3.5 w-3.5" />
-            Chat
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="gap-1.5">
-            <ActivityIcon className="h-3.5 w-3.5" />
-            Activity
-          </TabsTrigger>
-          <TabsTrigger value="related-work" className="gap-1.5">
-            <ListTree className="h-3.5 w-3.5" />
-            Related work
-          </TabsTrigger>
-          {issuePluginTabItems.map((item) => (
-            <TabsTrigger key={item.value} value={item.value}>
-              {item.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        )}
+        {/* The chat IS the page — the Chat/Activity/Related-work tab strip is
+            hidden and the thread renders as the only surface. */}
 
-        {/* Flag ON the thread viewport extends under main's horizontal padding
+        {/* The thread viewport extends under main's horizontal padding
             (symmetric, so the centered column keeps the same axis) and the
             scrollbar sits flush against the properties-pane border. */}
         <TabsContent
           value="chat"
-          className={
-            taskChatShellEnabled
-              ? isMobile
-                ? "-mx-4"
-                : "-mx-4 md:-mx-6 flex min-h-0 flex-col"
-              : undefined
-          }
+          className={isMobile ? "-mx-4" : "-mx-4 md:-mx-6 flex min-h-0 flex-col"}
         >
           {resolvedDetailTab === "chat" ? (
             <IssueDetailChatTab
@@ -4963,7 +4710,6 @@ export function IssueDetail() {
                 // Suppress the seeded-description bubble for the onboarding first
                 // task: its description is agent instructions, not something the
                 // user typed. The user lands on a seeded agent greeting instead.
-                taskChatShellEnabled &&
                 issue.originKind !== ONBOARDING_FIRST_TASK_ORIGIN_KIND
                   ? {
                       description: issue.description ?? "",
@@ -5032,14 +4778,7 @@ export function IssueDetail() {
                   />
                 ) : null
               }
-              footer={
-                !taskChatShellEnabled && siblingNavigation ? (
-                  <IssueSiblingNavigation
-                    navigation={siblingNavigation}
-                    linkState={resolvedIssueDetailState ?? location.state}
-                  />
-                ) : null
-              }
+              footer={null}
               feedbackVotes={feedbackVotes}
               feedbackDataSharingPreference={feedbackDataSharingPreference}
               feedbackTermsUrl={FEEDBACK_TERMS_URL}

@@ -1,6 +1,5 @@
 /**
- * Normalized presentation model for the Task Chat Redesign (flag:
- * enableTaskChatRedesign).
+ * Normalized presentation model for the chat-style task thread.
  *
  * This is a deliberately small, protocol-agnostic model that the new render
  * layer consumes. Two producers feed it:

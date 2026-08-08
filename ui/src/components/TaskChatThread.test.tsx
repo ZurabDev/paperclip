@@ -69,13 +69,21 @@ describe("TaskChatThread draft pass-through", () => {
 });
 
 describe("TaskChatThread live transcript", () => {
-  it("renders in-flight output with RunTranscriptView", () => {
+  it("renders in-flight output through TaskChatLiveTail, dropping the debug plumbing (PAP-463 C1)", () => {
+    // Interleave the exact noise the old RunTranscriptView tail surfaced (init
+    // row, stdout/stderr/system dumps) with real content. Only the streamed
+    // reply markdown and the tool row may reach the thread.
     transcriptState.transcriptByRun.set("run-1", [
+      { kind: "init", ts: "2026-08-07T00:00:00.000Z", model: "claude", sessionId: "sess-INITMARKER" },
+      { kind: "system", ts: "2026-08-07T00:00:00.000Z", text: "SYSTEMNOISE environment hint" },
+      { kind: "stdout", ts: "2026-08-07T00:00:00.000Z", text: "STDOUTNOISE raw json dump" },
+      { kind: "stderr", ts: "2026-08-07T00:00:00.000Z", text: "STDERRNOISE adapter timeout note" },
       {
         kind: "assistant",
         ts: "2026-08-07T00:00:00.000Z",
         text: "Streaming through the shared renderer",
       },
+      { kind: "tool_call", ts: "2026-08-07T00:00:00.000Z", name: "Read", toolUseId: "t1", input: { file_path: "src/app.ts" } },
     ]);
 
     render(
@@ -98,10 +106,15 @@ describe("TaskChatThread live transcript", () => {
       />,
     );
 
-    expect(
-      container.querySelector('[data-testid="task-chat-live-transcript"]'),
-    ).not.toBeNull();
-    expect(container.textContent).toContain("Streaming through the shared renderer");
+    const tail = container.querySelector('[data-testid="task-chat-live-transcript"]');
+    expect(tail).not.toBeNull();
+    // Clean content survives: streamed reply markdown + tool row.
+    expect(tail!.textContent).toContain("Streaming through the shared renderer");
+    expect(tail!.textContent).toContain("src/app.ts");
+    // None of the debug plumbing reaches the thread.
+    for (const noise of ["INITMARKER", "SYSTEMNOISE", "STDOUTNOISE", "STDERRNOISE"]) {
+      expect(container.textContent).not.toContain(noise);
+    }
   });
 
   it("keeps the transcript mounted through run settle until the settled turn renders (PAP-462 B4)", () => {

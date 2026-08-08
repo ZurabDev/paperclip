@@ -4,7 +4,7 @@ import {
   useLiveRunTranscripts,
   type RunTranscriptSource,
 } from "@/components/transcript/useLiveRunTranscripts";
-import { RunTranscriptView } from "@/components/transcript/RunTranscriptView";
+import { TaskChatLiveTail } from "@/components/task-chat/TaskChatLiveTail";
 import { commentsToTaskChatItems } from "@/components/task-chat/task-chat-adapter";
 import {
   assembleThreadItems,
@@ -71,7 +71,9 @@ export type TaskChatThreadProps = ComponentProps<typeof IssueChatThread>;
  * Two data sources feed the render layer, both reused from the existing thread:
  *   - the comment stream (incl. optimistic echoes) → author-typed bubbles, and
  *   - the live run transcript (useLiveRunTranscripts, the same poll+websocket
- *     source the current thread uses) → RunTranscriptView while in flight.
+ *     source the current thread uses) → clean TaskChatLiveTail rows (tool cards,
+ *     diffs, streamed reply markdown) while in flight, via the same
+ *     transcriptToTaskChatItems converter the settled turns use (PAP-463).
  *
  * Once a run terminates, its settled turn anchors after the run's
  * last comment (comment.runId linkage) and — when it directly follows that
@@ -475,6 +477,29 @@ export function TaskChatThread(props: TaskChatThreadProps) {
     [tailRunId, tailContentKey],
   );
 
+  // The tail's clean rows (PAP-463 C1): the streaming transcript parsed through
+  // the SAME transcriptToTaskChatItems converter the settled turns use, which
+  // drops the debug plumbing (init/stdout/stderr/system) so RunTranscriptView's
+  // noise can never reach the thread. Memoized on the content key (tailEntries
+  // is a fresh array each render) so the O(n) parse is not re-walked while the
+  // pill's own second-tick keeps the elapsed readout moving. `running` follows
+  // tailStreaming: true while live, false through the settle gap — so the tail
+  // renders identically either side of the run finishing.
+  const tailAgentName = liveRun?.agentName ?? linkedRunMetaById.get(tailRunId ?? "")?.agentName;
+  const tailItems = useMemo(
+    () =>
+      tailRunId
+        ? transcriptToTaskChatItems(tailEntries, {
+            runId: tailRunId,
+            agentName: tailAgentName,
+            running: tailStreaming,
+          })
+        : [],
+    // tailEntries is a fresh array each render; tailContentKey tracks its content.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tailRunId, tailContentKey, tailStreaming, tailAgentName],
+  );
+
   // Feedback votes keyed by the comment they target (targetType
   // "issue_comment"), mirroring IssueChatThread — the redesign attaches the
   // 👍/👎 state to each agent bubble by its comment id (PAP-413).
@@ -583,15 +608,13 @@ export function TaskChatThread(props: TaskChatThreadProps) {
                   finishedAtMs={tailFinishedAtMs}
                   toolSummary={tailToolSummary}
                 />
-                <RunTranscriptView
-                  entries={tailEntries}
-                  streaming={tailStreaming}
+                <TaskChatLiveTail
+                  items={tailItems}
                   emptyMessage={
                     tailStatus === "queued"
                       ? "Waiting to start..."
                       : "Waiting for transcript..."
                   }
-                  externalReferences={externalReferences}
                 />
               </div>
             ) : null}

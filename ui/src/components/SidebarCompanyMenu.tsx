@@ -6,7 +6,6 @@ import {
   GripVertical,
   LogOut,
   Plus,
-  Settings,
   UserPlus,
 } from "lucide-react";
 import {
@@ -474,21 +473,6 @@ export function SidebarCompanyMenu({ open: controlledOpen, onOpenChange }: Sideb
             <span className="truncate">
               {currentName ? `Invite people to ${currentName}` : "Invite people"}
             </span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild disabled={isEditingOrder}>
-          <Link
-            to="/company/settings"
-            onClick={(event) => {
-              if (isEditingOrder) {
-                event.preventDefault();
-                return;
-              }
-              closeNavigationChrome();
-            }}
-          >
-            <Settings className="size-4" />
-            <span>{isCloud ? "Organization settings" : "Company settings"}</span>
           </Link>
         </DropdownMenuItem>
         {session?.session ? (

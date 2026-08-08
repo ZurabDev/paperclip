@@ -18,6 +18,10 @@ import {
   type SettledTurnMergeMeta,
 } from "@/components/task-chat/transcript-adapter";
 import { TaskChatDescriptionBubble } from "@/components/task-chat/TaskChatDescriptionBubble";
+import {
+  TaskChatLiveRunPill,
+  toolCountSummaryFromEntries,
+} from "@/components/task-chat/TaskChatLiveRunPill";
 import type {
   TaskChatInteractionItem,
   TaskChatItem,
@@ -377,6 +381,21 @@ export function TaskChatThread(props: TaskChatThreadProps) {
   }, liveEntries.length);
   const threadContentKey = taskChatContentKey(items) + liveContentKey;
 
+  // Status-pill inputs for the live tail (PAP-461, A1): the run's start, its
+  // finish (once terminal), and the "called N tools" summary. Memoized on the
+  // transcript content key so the O(n) tool count is not re-walked every render
+  // while the pill's own second-tick keeps the elapsed readout moving.
+  const liveRunStartedAtMs = liveRun
+    ? (liveRun.startedAt ? toMs(liveRun.startedAt) : null) ?? toMs(liveRun.createdAt)
+    : null;
+  const liveRunFinishedAtMs = liveRun?.finishedAt ? toMs(liveRun.finishedAt) : null;
+  const liveToolSummary = useMemo(
+    () => (liveRun ? toolCountSummaryFromEntries(liveEntries) : null),
+    // liveEntries is a fresh array each render; liveContentKey tracks its content.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [liveRun?.id, liveContentKey],
+  );
+
   // Feedback votes keyed by the comment they target (targetType
   // "issue_comment"), mirroring IssueChatThread — the redesign attaches the
   // 👍/👎 state to each agent bubble by its comment id (PAP-413).
@@ -479,6 +498,12 @@ export function TaskChatThread(props: TaskChatThreadProps) {
             renderMessageActions={renderMessageActions}
             tail={liveRun ? (
               <div data-testid="task-chat-live-transcript">
+                <TaskChatLiveRunPill
+                  status={liveRun.status}
+                  startedAtMs={liveRunStartedAtMs}
+                  finishedAtMs={liveRunFinishedAtMs}
+                  toolSummary={liveToolSummary}
+                />
                 <RunTranscriptView
                   entries={liveEntries}
                   streaming

@@ -850,7 +850,9 @@ function TranscriptMessageBlock({
       <MarkdownBody
         className={cn(
           "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-          compact ? "text-xs leading-5 text-foreground/85" : "text-sm",
+          // Match the default view's chat message body (IssueChatThread:
+          // `text-sm leading-6`) so streamed text reads identically (PAP-461, A2).
+          compact ? "text-xs leading-5 text-foreground/85" : "text-sm leading-6",
         )}
         externalReferences={externalReferences}
       >
@@ -859,7 +861,7 @@ function TranscriptMessageBlock({
       {block.streaming && (
         <div className="mt-2 inline-flex items-center gap-1 text-(length:--text-nano) font-medium italic text-muted-foreground">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-70" />
+            <span className="tc-live-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-70" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
           </span>
           Streaming
@@ -883,8 +885,11 @@ function TranscriptThinkingBlock({
   return (
     <MarkdownBody
       className={cn(
-        "italic text-foreground/70 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        density === "compact" ? "text-(length:--text-micro) leading-5" : "text-sm leading-6",
+        // Match the default view's chain-of-thought text (IssueChatThread:
+        // `text-(length:--text-compact) italic leading-5 text-muted-foreground/70`)
+        // so streamed thinking reads identically across both views (PAP-461, A2).
+        "italic text-muted-foreground/70 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+        density === "compact" ? "text-(length:--text-micro) leading-5" : "text-(length:--text-compact) leading-5",
         className,
       )}
       externalReferences={externalReferences}
@@ -1365,7 +1370,7 @@ function TranscriptActivityRow({
         <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-300" />
       ) : (
         <span className="relative mt-1 flex h-2.5 w-2.5 shrink-0">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-70" />
+          <span className="tc-live-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-70" />
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-blue-500" />
         </span>
       )}
@@ -1801,7 +1806,7 @@ export function RunTranscriptView({
       {keyedBlocks.map(({ block, key }, index) => (
         <div
           key={key}
-          className={cn(index === keyedBlocks.length - 1 && streaming && "animate-in fade-in slide-in-from-bottom-1 duration-300")}
+          className={cn(index === keyedBlocks.length - 1 && streaming && "tc-stream-block-enter")}
         >
           {block.type === "message" && (
             <TranscriptMessageBlock

@@ -37,6 +37,9 @@ export interface SandboxLoginDriver {
   dispose(): Promise<void>;
 }
 
+/** Receives the parsed prompt one time in memory. The caller displays it. */
+export type DeviceLoginPromptSink = (prompt: DeviceLoginPrompt) => void;
+
 export type DeviceLoginOutcome = "success" | "failure" | "timeout" | "cancelled";
 
 /** The runner result. It never carries a URL, a code, or a token byte. */
@@ -50,7 +53,7 @@ export interface RunDeviceLoginOptions {
   /** The login command. Defaults to {@link CODEX_DEVICE_LOGIN_COMMAND}. */
   command?: string;
   /** Receives the parsed prompt one time in memory. The caller displays it. */
-  onPrompt: (prompt: DeviceLoginPrompt) => void;
+  onPrompt: DeviceLoginPromptSink;
   /**
    * Receives the sandbox `auth.json` bytes one time in memory on success. The
    * runner reads the bytes with {@link SandboxLoginDriver.readFile} before it

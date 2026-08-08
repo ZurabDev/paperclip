@@ -115,7 +115,9 @@ describe("runDeviceLogin", () => {
     const result = await runDeviceLogin(driver, {
       onPrompt: () => {},
       timeoutMs: 1000,
-      log: (line) => logs.push(line),
+      log: (line) => {
+        logs.push(line);
+      },
     });
     const haystack = `${logs.join("\n")}\n${JSON.stringify(result)}`;
     expect(haystack).not.toContain(REAL_SHAPED_URL);

@@ -238,7 +238,9 @@ describe("device-login credential export", () => {
       proofHome,
       env,
       companyId: COMPANY,
-      log: (line) => logs.push(line),
+      log: (line) => {
+        logs.push(line);
+      },
     });
     const haystack = logs.join("\n");
     expect(haystack).not.toContain(TOKEN_SENTINEL);

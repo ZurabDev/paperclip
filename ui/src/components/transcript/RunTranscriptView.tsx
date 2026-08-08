@@ -48,12 +48,18 @@ type TranscriptBlock =
       type: "message";
       role: "assistant" | "user";
       ts: string;
+      // Timestamp of the first entry that opened this block. `ts` tracks the
+      // latest merged delta and mutates every chunk; `startTs` stays fixed so
+      // the React key is stable and the streaming block does not remount (and
+      // restart its fade) on each delta.
+      startTs: string;
       text: string;
       streaming: boolean;
     }
   | {
       type: "thinking";
       ts: string;
+      startTs: string;
       text: string;
       streaming: boolean;
     }
@@ -73,6 +79,7 @@ type TranscriptBlock =
   | {
       type: "activity";
       ts: string;
+      startTs: string;
       activityId?: string;
       name: string;
       status: "running" | "completed";
@@ -125,6 +132,7 @@ type TranscriptBlock =
   | {
       type: "stdout";
       ts: string;
+      startTs: string;
       text: string;
     }
   | {
@@ -550,6 +558,7 @@ export function normalizeTranscript(entries: TranscriptEntry[], streaming: boole
           type: "message",
           role: entry.kind,
           ts: entry.ts,
+          startTs: entry.ts,
           text: entry.text,
           streaming: isStreaming,
         });
@@ -567,6 +576,7 @@ export function normalizeTranscript(entries: TranscriptEntry[], streaming: boole
         blocks.push({
           type: "thinking",
           ts: entry.ts,
+          startTs: entry.ts,
           text: entry.text,
           streaming: isStreaming,
         });
@@ -691,6 +701,7 @@ export function normalizeTranscript(entries: TranscriptEntry[], streaming: boole
           const block: Extract<TranscriptBlock, { type: "activity" }> = {
             type: "activity",
             ts: entry.ts,
+            startTs: entry.ts,
             activityId: activity.activityId,
             name: activity.name,
             status: activity.status,
@@ -758,12 +769,62 @@ export function normalizeTranscript(entries: TranscriptEntry[], streaming: boole
       blocks.push({
         type: "stdout",
         ts: entry.ts,
+        startTs: entry.ts,
         text: entry.text,
       });
     }
   }
 
   return groupToolBlocks(groupCommandBlocks(blocks));
+}
+
+/**
+ * Stable identity for a block's React key. Anchored to the block's opening
+ * timestamp (`startTs`) or a durable id (`toolUseId`, `activityId`) rather than
+ * its latest `ts`, which mutates on every streamed delta. A mutating key
+ * remounts the block, restarting its 300ms fade-in so the text visibly blinks
+ * out and back each chunk; a stable one keeps the streaming tail mounted.
+ */
+function transcriptBlockIdentity(block: TranscriptBlock): string {
+  switch (block.type) {
+    case "message":
+      return `message:${block.role}:${block.startTs}`;
+    case "thinking":
+      return `thinking:${block.startTs}`;
+    case "stdout":
+      return `stdout:${block.startTs}`;
+    case "activity":
+      return `activity:${block.activityId ?? block.startTs}`;
+    case "tool":
+      return `tool:${block.toolUseId ?? block.ts}`;
+    case "command_group":
+      return `command_group:${block.ts}`;
+    case "tool_group":
+      return `tool_group:${block.ts}`;
+    case "stderr_group":
+      return `stderr_group:${block.ts}`;
+    case "system_group":
+      return `system_group:${block.ts}`;
+    case "diff_group":
+      return `diff_group:${block.ts}`;
+    case "event":
+      return `event:${block.label}:${block.ts}`;
+  }
+}
+
+/**
+ * Assign each block a stable, unique React key. Identity is position-independent
+ * so earlier blocks collapsing (truncation) does not remount the survivors; a
+ * per-render occurrence counter disambiguates the rare identity collision.
+ */
+export function keyTranscriptBlocks(blocks: TranscriptBlock[]): Array<{ block: TranscriptBlock; key: string }> {
+  const seen = new Map<string, number>();
+  return blocks.map((block) => {
+    const identity = transcriptBlockIdentity(block);
+    const occurrence = seen.get(identity) ?? 0;
+    seen.set(identity, occurrence + 1);
+    return { block, key: occurrence === 0 ? identity : `${identity}#${occurrence}` };
+  });
 }
 
 function TranscriptMessageBlock({
@@ -1716,6 +1777,7 @@ export function RunTranscriptView({
     [entries, mode, streaming],
   );
   const visibleBlocks = limit ? blocks.slice(-limit) : blocks;
+  const keyedBlocks = useMemo(() => keyTranscriptBlocks(visibleBlocks), [visibleBlocks]);
   const visibleEntries = limit ? entries.slice(-limit) : entries;
 
   if (entries.length === 0) {
@@ -1736,10 +1798,10 @@ export function RunTranscriptView({
 
   return (
     <div className={cn("space-y-3", className)}>
-      {visibleBlocks.map((block, index) => (
+      {keyedBlocks.map(({ block, key }, index) => (
         <div
-          key={`${block.type}-${block.ts}-${index}`}
-          className={cn(index === visibleBlocks.length - 1 && streaming && "animate-in fade-in slide-in-from-bottom-1 duration-300")}
+          key={key}
+          className={cn(index === keyedBlocks.length - 1 && streaming && "animate-in fade-in slide-in-from-bottom-1 duration-300")}
         >
           {block.type === "message" && (
             <TranscriptMessageBlock

@@ -11,6 +11,7 @@ import {
   mergeRunLogChunks,
   parsePersistedLogContent,
   readChunkSeq,
+  type ChunkRetentionBudget,
 } from "../../lib/run-log-chunks";
 
 // TODO(perf): this whole hook polls the log/runs endpoints on an interval. The
@@ -24,6 +25,13 @@ const LOG_READ_LIMIT_BYTES = 256_000;
 // gaps and reconnects instead of polling every couple of seconds.
 const REALTIME_FALLBACK_POLL_INTERVAL_MS = 30_000;
 const EMPTY_RUN_LOG_CHUNKS: RunLogChunk[] = [];
+// Retained transcript payload budget for full task views. A byte budget (rather
+// than a tiny chunk count) keeps the whole streamed scrollback intact — a
+// delta-streaming run emits thousands of one-token chunks in seconds, and the
+// old 200-chunk cap discarded just-rendered messages off the top irreversibly.
+// If a run genuinely exceeds this, the oldest output collapses behind a visible
+// marker instead of vanishing (see `applyRetentionBudget`).
+const TASK_VIEW_MAX_BYTES_PER_RUN = 2_000_000;
 
 export interface RunTranscriptSource {
   id: string;
@@ -37,7 +45,13 @@ export interface RunTranscriptSource {
 interface UseLiveRunTranscriptsOptions {
   runs: RunTranscriptSource[];
   companyId?: string | null;
+  /**
+   * Compact chunk-count cap for ticker-style consumers (dashboard). When set,
+   * trimming is silent — the historical behavior. Full task views omit this and
+   * use the byte budget below instead.
+   */
   maxChunksPerRun?: number;
+  maxBytesPerRun?: number;
   logPollIntervalMs?: number;
   logReadLimitBytes?: number;
   enableRealtimeUpdates?: boolean;
@@ -67,11 +81,21 @@ export function resolveInitialLogOffset(run: RunTranscriptSource, limitBytes: nu
 export function useLiveRunTranscripts({
   runs,
   companyId,
-  maxChunksPerRun = 200,
+  maxChunksPerRun,
+  maxBytesPerRun = TASK_VIEW_MAX_BYTES_PER_RUN,
   logPollIntervalMs = LOG_POLL_INTERVAL_MS,
   logReadLimitBytes = LOG_READ_LIMIT_BYTES,
   enableRealtimeUpdates = true,
 }: UseLiveRunTranscriptsOptions) {
+  // Ticker consumers opt into the silent chunk-count cap; full task views use a
+  // byte budget that collapses (not discards) the oldest output when exceeded.
+  const retentionBudget: ChunkRetentionBudget = useMemo(
+    () =>
+      typeof maxChunksPerRun === "number"
+        ? { maxChunks: maxChunksPerRun }
+        : { maxBytes: maxBytesPerRun, collapseTrimmed: true },
+    [maxChunksPerRun, maxBytesPerRun],
+  );
   const runsKey = useMemo(
     () =>
       runs
@@ -134,7 +158,7 @@ export function useLiveRunTranscripts({
           seenChunkKeys: seenChunkKeysRef.current,
           trimmedSeqFloorByRun: trimmedSeqFloorByRunRef.current,
         },
-        maxChunksPerRun,
+        retentionBudget,
       );
       if (!changed) return prev;
       const next = new Map(prev);

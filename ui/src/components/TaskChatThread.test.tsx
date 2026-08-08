@@ -103,4 +103,61 @@ describe("TaskChatThread live transcript", () => {
     ).not.toBeNull();
     expect(container.textContent).toContain("Streaming through the shared renderer");
   });
+
+  it("keeps the transcript mounted through run settle until the settled turn renders (PAP-462 B4)", () => {
+    transcriptState.transcriptByRun.set("run-1", [
+      {
+        kind: "assistant",
+        ts: "2026-08-07T00:00:00.000Z",
+        text: "Last words before the run stops",
+      },
+    ]);
+
+    const liveProps = {
+      comments: [] as never[],
+      onAdd: async () => {},
+      issueStatus: "in_progress",
+      activeRun: {
+        id: "run-1",
+        status: "running",
+        invocationSource: "issue" as const,
+        triggerDetail: null,
+        startedAt: "2026-08-07T00:00:00.000Z",
+        finishedAt: null,
+        createdAt: "2026-08-07T00:00:00.000Z",
+        agentId: "agent-1",
+        agentName: "Coder",
+        adapterType: "codex_local",
+      },
+    };
+
+    render(<TaskChatThread {...liveProps} />);
+    expect(
+      container.querySelector('[data-testid="task-chat-live-transcript"]'),
+    ).not.toBeNull();
+
+    // The run settles: the issue goes terminal and the run reports succeeded, so
+    // `liveRun` flips to null — but no reply comment has landed yet. The
+    // transcript must NOT vanish; it stays mounted (now as a settled tail) until
+    // its settled turn/comment renders.
+    render(
+      <TaskChatThread
+        {...liveProps}
+        issueStatus="done"
+        activeRun={{
+          ...liveProps.activeRun,
+          status: "succeeded",
+          finishedAt: "2026-08-07T00:01:00.000Z",
+        }}
+      />,
+    );
+
+    expect(
+      container.querySelector('[data-testid="task-chat-live-transcript"]'),
+    ).not.toBeNull();
+    expect(container.textContent).toContain("Last words before the run stops");
+    // The pill has settled to its "Worked" state rather than flipping back to a
+    // spinner while it waits for the reply comment.
+    expect(container.textContent).toContain("Worked");
+  });
 });

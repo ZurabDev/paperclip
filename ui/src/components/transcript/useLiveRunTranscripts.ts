@@ -32,6 +32,13 @@ const EMPTY_RUN_LOG_CHUNKS: RunLogChunk[] = [];
 // If a run genuinely exceeds this, the oldest output collapses behind a visible
 // marker instead of vanishing (see `applyRetentionBudget`).
 const TASK_VIEW_MAX_BYTES_PER_RUN = 2_000_000;
+// Grace period before an accumulated transcript buffer is pruned for a run that
+// has vanished from the `runs` list. The parent refetches runs on its own
+// interval, and a single transient empty/errored poll would otherwise wipe the
+// buffer — forcing a rehydration that skips to the last `LOG_READ_LIMIT_BYTES`
+// and silently drops already-rendered scrollback (PAP-462 B3). A run that is
+// genuinely gone stays absent past this window and is then pruned as before.
+const RUN_ABSENCE_PRUNE_GRACE_MS = 20_000;
 
 export interface RunTranscriptSource {
   id: string;
@@ -119,6 +126,14 @@ export function useLiveRunTranscripts({
   const pendingLogRowsByRunRef = useRef(new Map<string, string>());
   const logOffsetByRunRef = useRef(new Map<string, number>());
   const missingTerminalLogRunIdsRef = useRef(new Set<string>());
+  // PAP-462 B3: buffered runs that dropped out of the `runs` list, mapped to the
+  // wall-clock deadline (ms) after which their buffer may be pruned. A run still
+  // inside its grace window is retained across the empty poll; `pruneTick` fires
+  // the effect again once the nearest deadline elapses so a run that stays gone
+  // is eventually cleaned up even if the `runs` list never changes again.
+  const absenceDeadlineByRunRef = useRef(new Map<string, number>());
+  const prevKnownRunIdsRef = useRef(new Set<string>());
+  const [pruneTick, setPruneTick] = useState(0);
   const transcriptCacheRef = useRef(new Map<string, {
     adapterType: string;
     chunks: RunLogChunk[];
@@ -169,10 +184,40 @@ export function useLiveRunTranscripts({
 
   useEffect(() => {
     const knownRunIds = new Set(normalizedRuns.map((run) => run.id));
+    const now = Date.now();
+    const deadlines = absenceDeadlineByRunRef.current;
+
+    // PAP-462 B3: a run that just disappeared from the list starts its grace
+    // clock; one that reappeared clears any pending deadline. Comparing against
+    // the previous known set means a transient empty poll only *arms* the timer
+    // rather than pruning the buffer outright.
+    for (const runId of prevKnownRunIdsRef.current) {
+      if (!knownRunIds.has(runId) && !deadlines.has(runId)) {
+        deadlines.set(runId, now + RUN_ABSENCE_PRUNE_GRACE_MS);
+      }
+    }
+    for (const runId of knownRunIds) {
+      deadlines.delete(runId);
+    }
+    prevKnownRunIdsRef.current = knownRunIds;
+
+    // Retain known runs plus any absent run still inside its grace window; only
+    // runs absent past their deadline are actually pruned.
+    const retainedRunIds = new Set(knownRunIds);
+    let soonestExpiryMs = Number.POSITIVE_INFINITY;
+    for (const [runId, deadline] of deadlines) {
+      if (deadline > now) {
+        retainedRunIds.add(runId);
+        soonestExpiryMs = Math.min(soonestExpiryMs, deadline);
+      } else {
+        deadlines.delete(runId);
+      }
+    }
+
     setChunksByRun((prev) => {
       const next = new Map<string, RunLogChunk[]>();
       for (const [runId, chunks] of prev) {
-        if (knownRunIds.has(runId)) {
+        if (retainedRunIds.has(runId)) {
           next.set(runId, chunks);
         }
       }
@@ -181,7 +226,7 @@ export function useLiveRunTranscripts({
     setHydratedRunIds((prev) => {
       const next = new Set<string>();
       for (const runId of prev) {
-        if (knownRunIds.has(runId)) {
+        if (retainedRunIds.has(runId)) {
           next.add(runId);
         }
       }
@@ -190,31 +235,41 @@ export function useLiveRunTranscripts({
 
     for (const key of pendingLogRowsByRunRef.current.keys()) {
       const runId = key.replace(/:records$/, "");
-      if (!knownRunIds.has(runId)) {
+      if (!retainedRunIds.has(runId)) {
         pendingLogRowsByRunRef.current.delete(key);
       }
     }
     for (const runId of logOffsetByRunRef.current.keys()) {
-      if (!knownRunIds.has(runId)) {
+      if (!retainedRunIds.has(runId)) {
         logOffsetByRunRef.current.delete(runId);
       }
     }
     for (const runId of trimmedSeqFloorByRunRef.current.keys()) {
-      if (!knownRunIds.has(runId)) {
+      if (!retainedRunIds.has(runId)) {
         trimmedSeqFloorByRunRef.current.delete(runId);
       }
     }
     for (const runId of missingTerminalLogRunIdsRef.current.keys()) {
-      if (!knownRunIds.has(runId)) {
+      if (!retainedRunIds.has(runId)) {
         missingTerminalLogRunIdsRef.current.delete(runId);
       }
     }
     for (const runId of transcriptCacheRef.current.keys()) {
-      if (!knownRunIds.has(runId)) {
+      if (!retainedRunIds.has(runId)) {
         transcriptCacheRef.current.delete(runId);
       }
     }
-  }, [normalizedRuns]);
+
+    // Re-run once the nearest grace window elapses so a run that stays gone is
+    // pruned even if `normalizedRuns` never changes again.
+    if (soonestExpiryMs !== Number.POSITIVE_INFINITY) {
+      const timer = window.setTimeout(
+        () => setPruneTick((tick) => tick + 1),
+        Math.max(0, soonestExpiryMs - now) + 50,
+      );
+      return () => window.clearTimeout(timer);
+    }
+  }, [normalizedRuns, pruneTick]);
 
   useEffect(() => {
     if (normalizedRuns.length === 0) return;

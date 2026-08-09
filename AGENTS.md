@@ -208,8 +208,10 @@ repository `../connect-ai/k8s/zworkers`; do not add live credentials to this rep
 
 The current product does not send transactional email. Email/password authentication is local,
 email verification is disabled, and company invitations are one-time high-entropy URLs returned
-to an authorized operator for manual delivery. Do not add an SMTP dependency to deployment
-configuration unless application support for a mail transport is implemented and tested first.
+to an authorized operator for manual delivery. With general sign-up disabled, only existing
+accounts can redeem those links; temporarily re-enable sign-up for controlled onboarding of a new
+human, then disable it again. Do not add an SMTP dependency to deployment configuration unless
+application support for a mail transport is implemented and tested first.
 
 Fork release order is mandatory: targeted tests, full typecheck/test/build, commit, push,
 immutable GHCR image, Helm render, `nelm release install`, rollout, `/api/health`, then an

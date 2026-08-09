@@ -32,7 +32,10 @@ databases, or secrets as a retry strategy.
 
 On a fresh database, keep sign-up enabled only long enough to claim the first CEO through
 `pnpm paperclipai auth bootstrap-ceo` in the running pod. Then disable general sign-up in chart
-values and redeploy. Invitations are manually delivered one-time URLs; no mail provider exists.
+values and redeploy. Existing accounts can redeem company invites while sign-up is disabled, but
+new humans cannot create accounts from an invite until an operator temporarily re-enables sign-up
+for that controlled onboarding window. Invitations are manually delivered one-time URLs; no mail
+provider exists.
 
 ## Rollback decision
 

@@ -47,8 +47,12 @@ kubectl -n zworkers exec deploy/zworkers -- pnpm paperclipai auth bootstrap-ceo
 ```
 
 Open the printed one-time URL over HTTPS and create/sign in to the first account. After the first
-operator exists, set `auth.disableSignUp=true` in the chart and redeploy; invited users can still
-join through invitation flows supported by the application.
+operator exists, set `auth.disableSignUp=true` in the chart and redeploy. Existing Paperclip
+accounts can still sign in and redeem company invitation links. A new human account cannot be
+created while Better Auth sign-up is disabled, even from an invite landing page. For a new human,
+temporarily re-enable sign-up for the controlled invitation window, have the user create the
+account from the one-time invite URL, then disable sign-up and redeploy again. Do not leave public
+sign-up enabled as a substitute for an account-provisioning workflow.
 
 Paperclip currently has no SMTP, Resend, SendGrid, SES, or other transactional-email transport.
 `requireEmailVerification` is false. Invitations are high-entropy, single-use URLs returned once

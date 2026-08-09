@@ -13,7 +13,6 @@ const createCompanyInviteMock = vi.hoisted(() => vi.fn());
 const revokeInviteMock = vi.hoisted(() => vi.fn());
 const pushToastMock = vi.hoisted(() => vi.fn());
 const setBreadcrumbsMock = vi.hoisted(() => vi.fn());
-const clipboardWriteTextMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/api/access", () => ({
   accessApi: {
@@ -60,6 +59,8 @@ describe("CompanyInvites", () => {
       inviteType: "company_join",
       tokenHash: `hash-${inviteNumber}`,
       allowedJoinTypes: "human",
+      inviteeEmail: `invitee${inviteNumber}@paperclip.local`,
+      emailDeliveredAt: "2026-04-01T00:00:01.000Z",
       defaultsPayload: null,
       expiresAt: "2026-04-20T00:00:00.000Z",
       invitedByUserId: "user-1",
@@ -101,15 +102,14 @@ describe("CompanyInvites", () => {
         onboardingTextPath: null,
         humanRole: "viewer",
         allowedJoinTypes: "human",
+        inviteeEmail: "invitee@example.com",
+        emailDeliveredAt: "2026-04-01T00:00:01.000Z",
+        emailProvider: "smtp",
       });
     });
 
     revokeInviteMock.mockResolvedValue(undefined);
 
-    Object.defineProperty(globalThis.navigator, "clipboard", {
-      configurable: true,
-      value: { writeText: clipboardWriteTextMock },
-    });
   });
 
   afterEach(() => {
@@ -155,7 +155,7 @@ describe("CompanyInvites", () => {
     expect(container.textContent).not.toContain("OpenClaw shortcut");
 
     expect(container.textContent).toContain("Choose a role");
-    expect(container.textContent).toContain("Each invite link is single-use.");
+    expect(container.textContent).toContain("Each emailed link is single-use");
     expect(container.textContent).toContain("Can create agents, invite users, assign tasks, and approve join requests.");
     expect(container.textContent).toContain("Everything in Admin, plus managing members.");
     expect(container.textContent).not.toContain("permission grants");
@@ -182,8 +182,16 @@ describe("CompanyInvites", () => {
       viewerRadio?.dispatchEvent(new Event("change", { bubbles: true }));
     });
 
+    const emailInput = container.querySelector('input[aria-label="Invitee email address"]') as HTMLInputElement;
+    await act(async () => {
+      const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      valueSetter?.call(emailInput, "invitee@example.com");
+      emailInput.dispatchEvent(new Event("input", { bubbles: true }));
+      emailInput.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
     const buttons = Array.from(container.querySelectorAll("button"));
-    const createButton = buttons.find((button) => button.textContent === "Create invite");
+    const createButton = buttons.find((button) => button.textContent === "Send invitation");
     const revokeButton = buttons.find((button) => button.textContent === "Revoke");
 
     expect(createButton).toBeTruthy();
@@ -197,35 +205,18 @@ describe("CompanyInvites", () => {
 
     expect(createCompanyInviteMock).toHaveBeenCalledWith("company-1", {
       allowedJoinTypes: "human",
+      inviteeEmail: "invitee@example.com",
       humanRole: "viewer",
       agentMessage: null,
     });
-    expect(clipboardWriteTextMock).toHaveBeenCalledWith("https://paperclip.local/invite/new-token");
-    expect(container.textContent).toContain("Latest invite link");
-    expect(container.textContent).toContain("This URL includes the current Paperclip domain returned by the server.");
-    expect(container.querySelector('input[aria-label="Latest invite URL"]')).toHaveProperty(
-      "value",
-      "https://paperclip.local/invite/new-token",
-    );
-    expect(container.textContent).toContain("Copy link");
-    expect(container.textContent).toContain("Open invite");
+    expect(container.textContent).toContain("Invitation sent to invitee@example.com.");
+    expect(container.textContent).not.toContain("Copy link");
+    expect(container.textContent).not.toContain("Open invite");
     expect(pushToastMock).toHaveBeenCalledWith({
-      title: "Invite created",
-      body: "Invite ready below and copied to clipboard.",
+      title: "Invitation sent",
+      body: "The email provider accepted the invitation for invitee@example.com.",
       tone: "success",
     });
-
-    const copyLinkButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent === "Copy link",
-    );
-
-    await act(async () => {
-      copyLinkButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-    await flushReact();
-
-    expect(clipboardWriteTextMock).toHaveBeenCalledTimes(2);
-    expect(container.textContent).toContain("Copied");
 
     await act(async () => {
       revokeButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -239,20 +230,7 @@ describe("CompanyInvites", () => {
     });
   });
 
-  it("falls back to selectable text when browser clipboard access is unavailable", async () => {
-    Object.defineProperty(globalThis.navigator, "clipboard", {
-      configurable: true,
-      value: undefined,
-    });
-    Object.defineProperty(document, "queryCommandSupported", {
-      configurable: true,
-      value: vi.fn((command: string) => command === "copy"),
-    });
-    Object.defineProperty(document, "execCommand", {
-      configurable: true,
-      value: vi.fn(() => true),
-    });
-
+  it("requires an email address before sending", async () => {
     const root = createRoot(container);
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -271,23 +249,10 @@ describe("CompanyInvites", () => {
     await flushReact();
 
     const createButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent === "Create invite",
+      (button) => button.textContent === "Send invitation",
     );
-
-    await act(async () => {
-      createButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-    await flushReact();
-    await flushReact();
-
-    const inviteInput = container.querySelector('input[aria-label="Latest invite URL"]') as HTMLInputElement | null;
-    expect(inviteInput?.value).toBe("https://paperclip.local/invite/new-token");
-    expect(document.execCommand).toHaveBeenCalledWith("copy");
-    expect(pushToastMock).toHaveBeenCalledWith({
-      title: "Invite created",
-      body: "Invite ready below and copied to clipboard.",
-      tone: "success",
-    });
+    expect((createButton as HTMLButtonElement | undefined)?.disabled).toBe(true);
+    expect(createCompanyInviteMock).not.toHaveBeenCalled();
 
     await act(async () => {
       root.unmount();

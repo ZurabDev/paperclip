@@ -206,12 +206,13 @@ Repository remotes are fixed: `origin` is `ZurabDev/paperclip`; `upstream` is
 skill for production releases. The Kubernetes source of truth lives in the sibling private
 repository `../connect-ai/k8s/zworkers`; do not add live credentials to this repository.
 
-The current product does not send transactional email. Email/password authentication is local,
-email verification is disabled, and company invitations are one-time high-entropy URLs returned
-to an authorized operator for manual delivery. With general sign-up disabled, only existing
-accounts can redeem those links; temporarily re-enable sign-up for controlled onboarding of a new
-human, then disable it again. Do not add an SMTP dependency to deployment configuration unless
-application support for a mail transport is implemented and tested first.
+The CNT fork sends targeted human invitations through SMTP or Resend. In authenticated mode a
+human invite requires an email, provider acceptance is synchronous, failed deliveries revoke the
+token, and acceptance is bound to the signed-in email. `auth.disableSignUp=true` means invite-only
+account creation in this fork: general public sign-up remains closed while a valid targeted invite
+can create its matching account. CNT uses Multica's Resend provider through the official SDK; its
+API key lives only in the `zworkers-email` Kubernetes Secret. SMTP remains a portable fallback,
+not the CNT production path. Keep agent invitations token-based; agents do not own mailboxes.
 
 Fork release order is mandatory: targeted tests, full typecheck/test/build, commit, push,
 immutable GHCR image, Helm render, `nelm release install`, rollout, `/api/health`, then an

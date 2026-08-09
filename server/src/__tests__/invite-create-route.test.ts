@@ -27,6 +27,7 @@ function registerModuleMocks() {
 }
 
 function createDbStub() {
+  const updatedValues: unknown[] = [];
   const createdInvite = {
     id: "invite-1",
     companyId: "company-1",
@@ -73,10 +74,26 @@ function createDbStub() {
         },
       };
     },
+    update() {
+      return {
+        set(values: unknown) {
+          updatedValues.push(values);
+          return {
+            where() {
+              return Promise.resolve();
+            },
+          };
+        },
+      };
+    },
+    updatedValues,
   };
 }
 
-async function createApp() {
+async function createApp(options: {
+  deploymentMode?: "local_trusted" | "authenticated";
+  inviteEmailService?: { sendCompanyInvite: ReturnType<typeof vi.fn> };
+} = {}) {
   const [{ accessRoutes }, { errorHandler }] = await Promise.all([
     import("../routes/access.js"),
     import("../middleware/index.js"),
@@ -95,10 +112,11 @@ async function createApp() {
   app.use(
     "/api",
     accessRoutes(createDbStub() as any, {
-      deploymentMode: "local_trusted",
+      deploymentMode: options.deploymentMode ?? "local_trusted",
       deploymentExposure: "private",
       bindHost: "127.0.0.1",
       allowedHostnames: [],
+      inviteEmailService: options.inviteEmailService,
     }),
   );
   app.use(errorHandler);
@@ -133,5 +151,65 @@ describe("POST /companies/:companyId/invites", () => {
     expect(res.body.companyName).toBe("Acme Robotics");
     expect(res.body.invitePath).toMatch(/^\/invite\/pcp_invite_/);
     expect(res.body.inviteUrl).toMatch(/^https:\/\/paperclip\.example\/invite\/pcp_invite_/);
+  });
+
+  it("delivers a targeted invitation before reporting success", async () => {
+    const sendCompanyInvite = vi.fn().mockResolvedValue({
+      provider: "smtp",
+      messageId: "message-1",
+    });
+    const app = await createApp({
+      deploymentMode: "authenticated",
+      inviteEmailService: { sendCompanyInvite },
+    });
+
+    const res = await request(app)
+      .post("/api/companies/company-1/invites")
+      .set("host", "paperclip.example")
+      .set("x-forwarded-proto", "https")
+      .send({
+        allowedJoinTypes: "human",
+        inviteeEmail: "Invitee@Example.com ",
+        humanRole: "viewer",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.inviteeEmail).toBe("invitee@example.com");
+    expect(res.body.emailProvider).toBe("smtp");
+    expect(res.body.emailDeliveredAt).toBeTruthy();
+    expect(res.body.emailMessageId).toBe("message-1");
+    expect(sendCompanyInvite).toHaveBeenCalledWith(expect.objectContaining({
+      to: "invitee@example.com",
+      companyName: "Acme Robotics",
+      inviteUrl: expect.stringMatching(/^https:\/\/paperclip\.example\/invite\/pcp_invite_/),
+    }));
+  });
+
+  it("requires an email for human invitations in authenticated deployments", async () => {
+    const app = await createApp({ deploymentMode: "authenticated" });
+    const res = await request(app)
+      .post("/api/companies/company-1/invites")
+      .send({ allowedJoinTypes: "human", humanRole: "viewer" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("inviteeEmail is required for human invitations");
+  });
+
+  it("revokes the token when email delivery fails", async () => {
+    const sendCompanyInvite = vi.fn().mockRejectedValue(new Error("SMTP unavailable"));
+    const app = await createApp({
+      deploymentMode: "authenticated",
+      inviteEmailService: { sendCompanyInvite },
+    });
+    const res = await request(app)
+      .post("/api/companies/company-1/invites")
+      .send({
+        allowedJoinTypes: "human",
+        inviteeEmail: "invitee@example.com",
+        humanRole: "viewer",
+      });
+
+    expect(res.status).toBe(502);
+    expect(res.body.error).toContain("invite was revoked");
   });
 });

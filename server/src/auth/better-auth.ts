@@ -178,7 +178,9 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
-      disableSignUp: config.authDisableSignUp,
+      // The Express invite-only guard owns PAPERCLIP_AUTH_DISABLE_SIGN_UP so
+      // targeted invitees can create an account without reopening public signup.
+      disableSignUp: false,
     },
     rateLimit: buildBetterAuthRateLimitOptions({
       deploymentMode: config.deploymentMode,

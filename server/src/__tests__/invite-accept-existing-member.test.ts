@@ -141,7 +141,7 @@ function createAppWithActor(db: Record<string, unknown>, actor: Record<string, u
   return app;
 }
 
-function createDirectHumanInviteDbStub() {
+function createDirectHumanInviteDbStub(inviteeEmail: string | null = null) {
   const insertedValues: unknown[] = [];
   const updateValues: unknown[] = [];
   const invite = {
@@ -149,6 +149,7 @@ function createDirectHumanInviteDbStub() {
     companyId: "company-1",
     inviteType: "company_join",
     allowedJoinTypes: "human",
+    inviteeEmail,
     tokenHash: "hash",
     defaultsPayload: { human: { role: "owner" } },
     expiresAt: new Date("2027-03-10T00:00:00.000Z"),
@@ -316,7 +317,7 @@ describe("POST /invites/:token/accept", () => {
   });
 
   it("grants company access immediately for a human invite", async () => {
-    const { db, insertedValues, updateValues } = createDirectHumanInviteDbStub();
+    const { db, insertedValues, updateValues } = createDirectHumanInviteDbStub("invitee@example.com");
     const app = createAppWithActor(db, {
       type: "board",
       source: "session",
@@ -378,6 +379,28 @@ describe("POST /invites/:token/accept", () => {
         details: expect.objectContaining({ source: "human_invite_accept" }),
       }),
     );
+  });
+
+  it("rejects a targeted invitation for a different signed-in email", async () => {
+    const { db, insertedValues, updateValues } = createDirectHumanInviteDbStub(
+      "another@example.com",
+    );
+    const app = createAppWithActor(db, {
+      type: "board",
+      source: "session",
+      userId: "invitee-user",
+      companyIds: [],
+      memberships: [],
+    });
+
+    const res = await request(app)
+      .post("/api/invites/pcp_invite_test/accept")
+      .send({ requestType: "human" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("This invitation was sent to a different email address");
+    expect(insertedValues).toEqual([]);
+    expect(updateValues).toEqual([]);
   });
 
   it("replays a consumed human invite for the same user and repairs company access", async () => {

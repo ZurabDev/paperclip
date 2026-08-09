@@ -27,7 +27,7 @@ import type {
   PluginIssueOrchestrationSummary,
   PluginExecutionWorkspaceMetadata,
 } from "@paperclipai/plugin-sdk";
-import type { CreateIssueThreadInteraction, InviteJoinType, IssueDocumentSummary, PermissionKey, PrincipalType } from "@paperclipai/shared";
+import type { CreateIssueThreadInteraction, DeploymentMode, InviteJoinType, IssueDocumentSummary, PermissionKey, PrincipalType } from "@paperclipai/shared";
 import { pluginOperationIssueOriginKind } from "@paperclipai/shared";
 import { companyService } from "./companies.js";
 import { agentService } from "./agents.js";
@@ -690,7 +690,11 @@ export function buildHostServices(
   pluginKey: string,
   eventBus: PluginEventBus,
   notifyWorker?: (method: string, params: unknown) => void,
-  options: { pluginWorkerManager?: PluginWorkerManager; manifest?: import("@paperclipai/shared").PaperclipPluginManifestV1 } = {},
+  options: {
+    pluginWorkerManager?: PluginWorkerManager;
+    manifest?: import("@paperclipai/shared").PaperclipPluginManifestV1;
+    deploymentMode?: DeploymentMode;
+  } = {},
 ): HostServices & { dispose(): void } {
   const registry = pluginRegistryService(db);
   const stateStore = pluginStateStore(db);
@@ -2918,6 +2922,11 @@ export function buildHostServices(
           ? params.agentMessage.trim() || null
           : null;
         const allowedJoinTypes = params.allowedJoinTypes ?? "both";
+        if (options.deploymentMode === "authenticated" && allowedJoinTypes !== "agent") {
+          throw new Error(
+            "Authenticated deployments require targeted human invitations through the access API",
+          );
+        }
         const humanRole = allowedJoinTypes === "agent" ? null : params.humanRole ?? "operator";
         const insertValues = {
           companyId,

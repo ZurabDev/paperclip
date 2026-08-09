@@ -47,18 +47,31 @@ kubectl -n zworkers exec deploy/zworkers -- pnpm paperclipai auth bootstrap-ceo
 ```
 
 Open the printed one-time URL over HTTPS and create/sign in to the first account. After the first
-operator exists, set `auth.disableSignUp=true` in the chart and redeploy. Existing Paperclip
-accounts can still sign in and redeem company invitation links. A new human account cannot be
-created while Better Auth sign-up is disabled, even from an invite landing page. For a new human,
-temporarily re-enable sign-up for the controlled invitation window, have the user create the
-account from the one-time invite URL, then disable sign-up and redeploy again. Do not leave public
-sign-up enabled as a substitute for an account-provisioning workflow.
+operator exists, set `auth.disableSignUp=true` in the chart and redeploy. In the CNT fork this is
+invite-only mode: ordinary public sign-up is rejected, while a new human following a valid,
+unexpired targeted invitation may create the matching account. The invite token is passed in a
+dedicated request header and checked against the address before Better Auth creates the user.
 
-Paperclip currently has no SMTP, Resend, SendGrid, SES, or other transactional-email transport.
-`requireEmailVerification` is false. Invitations are high-entropy, single-use URLs returned once
-to an authorized operator and must be delivered through an approved out-of-band channel. Adding
-mail means implementing an application mail service, templates, delivery retries, provider
-credentials, tests, and operator observability before adding Kubernetes settings.
+Human invites in authenticated mode require `inviteeEmail`. Paperclip creates a high-entropy,
+single-use URL, sends it synchronously through SMTP or Resend, and records the delivery timestamp,
+provider, and provider message ID.
+The API returns success only after the provider accepts the message. A rejected provider request revokes the
+new token before returning `502`, so an operator can retry without leaving a live undistributed
+invite. Acceptance is also bound to the signed-in account email. Agent invites remain token-based
+because agents do not own mailboxes.
+
+CNT uses the same Resend API and official provider SDK as Multica. The application also retains
+SMTP as a portable self-hosting fallback, but Stalwart is not part of the ZWorkers delivery path.
+Production configuration is:
+
+```text
+PAPERCLIP_EMAIL_PROVIDER=resend
+PAPERCLIP_EMAIL_FROM=ZWorkers <noreply@updates.cnt.app>
+PAPERCLIP_RESEND_API_KEY=<RESEND_API_KEY from zworkers-email Secret>
+```
+
+`RESEND_API_KEY` and `RESEND_FROM_EMAIL` are accepted as Multica-compatible aliases. Provider
+requests use a stable per-invite idempotency key, preventing duplicate messages on API retries.
 
 ## Secrets
 
@@ -73,6 +86,7 @@ preserves existing values on upgrades:
 
 The database URL is stored separately in `zworkers-db`. Never rotate the encrypted-secrets master
 key without decrypting/re-encrypting stored secrets. Never print or commit secret values.
+The Resend API key is stored in `zworkers-email` and mounted only into the application container.
 
 ## Migrations, backup, and recovery
 
@@ -100,3 +114,5 @@ curl --resolve zworkers.cnt.me:443:212.41.1.178 https://zworkers.cnt.me/api/heal
 
 The `--resolve` smoke test works before public DNS exists. After DNS is added, repeat without it
 and perform sign-in, company switch, company creation, and invitation-link smoke tests.
+For an invitation smoke, send to a controlled mailbox, verify the message appears, create/sign in
+through its link, and confirm that a different account email receives `403` on acceptance.

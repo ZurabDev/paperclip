@@ -22,7 +22,8 @@ Deploy one multi-company Paperclip instance at `zworkers.cnt.me`. Read
 8. Verify in-pod `/api/health`, TLS ingress using `curl --resolve` before DNS, then the public URL
    after DNS.
 9. Perform authenticated browser smoke tests: sign in, create/switch companies, open an issue,
-   and generate/redeem an invitation link.
+   send an invitation email through Resend, confirm provider acceptance, and redeem it with the
+   matching account.
 
 Do not change shared cluster resources outside the chart except the documented PostgreSQL
 consumer allowlist/role and the one-time namespace secrets. Do not delete releases, PVCs,
@@ -32,10 +33,10 @@ databases, or secrets as a retry strategy.
 
 On a fresh database, keep sign-up enabled only long enough to claim the first CEO through
 `pnpm paperclipai auth bootstrap-ceo` in the running pod. Then disable general sign-up in chart
-values and redeploy. Existing accounts can redeem company invites while sign-up is disabled, but
-new humans cannot create accounts from an invite until an operator temporarily re-enables sign-up
-for that controlled onboarding window. Invitations are manually delivered one-time URLs; no mail
-provider exists.
+values and redeploy. The CNT fork interprets disabled sign-up as invite-only account creation: the
+public auth page cannot create accounts, while a valid targeted email invite can create its exact
+recipient. Confirm the `zworkers-email` Secret exists and the Resend SDK accepts a probe before
+calling the deployment ready. Never copy a human invite URL as the normal delivery path.
 
 ## Rollback decision
 

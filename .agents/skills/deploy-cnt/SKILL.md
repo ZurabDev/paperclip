@@ -32,7 +32,9 @@ databases, or secrets as a retry strategy.
 ## First deployment
 
 On a fresh database, keep sign-up enabled only long enough to claim the first CEO through
-`pnpm paperclipai auth bootstrap-ceo` in the running pod. Then disable general sign-up in chart
+`pnpm paperclipai auth bootstrap-ceo` in the running pod. The command reads the deployment mode
+and database URL directly from the pod environment, so do not create a one-off `config.json`.
+Then disable general sign-up in chart
 values and redeploy. The CNT fork interprets disabled sign-up as invite-only account creation: the
 public auth page cannot create accounts, while a valid targeted email invite can create its exact
 recipient. Confirm the `zworkers-email` Secret exists and the Resend SDK accepts a probe before

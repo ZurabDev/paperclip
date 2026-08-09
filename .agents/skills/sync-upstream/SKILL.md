@@ -1,6 +1,6 @@
 ---
 name: sync-upstream
-description: Safely inspect, merge, verify, and prepare publication of changes from paperclipai/paperclip into the ZurabDev/paperclip fork. Use for periodic upstream synchronization, upstream divergence checks, merge-conflict resolution, or auditing fork overlays after an upstream update. The bundled Node runner is cross-platform and never pushes or deploys implicitly.
+description: Safely inspect, merge, and verify changes from paperclipai/paperclip in the ZurabDev fork. Use for periodic sync, divergence checks, conflict resolution, or fork-overlay audits. The cross-platform runner never pushes or deploys implicitly.
 ---
 
 # Sync Upstream

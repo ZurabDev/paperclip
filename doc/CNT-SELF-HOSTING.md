@@ -46,6 +46,10 @@ running pod:
 kubectl -n zworkers exec deploy/zworkers -- pnpm paperclipai auth bootstrap-ceo
 ```
 
+The command supports the environment-only Kubernetes configuration used by this chart; a
+generated `config.json` is not required when `PAPERCLIP_DEPLOYMENT_MODE` and `DATABASE_URL` are
+present in the pod.
+
 Open the printed one-time URL over HTTPS and create/sign in to the first account. After the first
 operator exists, set `auth.disableSignUp=true` in the chart and redeploy. In the CNT fork this is
 invite-only mode: ordinary public sign-up is rejected, while a new human following a valid,

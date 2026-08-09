@@ -7,6 +7,7 @@ Preserve and semantically review these paths after every upstream merge:
 - `.agents/skills/sync-upstream/` and `.agents/skills/deploy-cnt/`
 - `.claude/commands/sync-upstream.md` and `.claude/commands/deploy-cnt.md`
 - the fork repository setting that keeps `.github/workflows/release.yml` disabled
+- the fork repository setting that keeps unsupported `commitperclip PR Review` disabled
 - `.github/workflows/docker.yml` production-target GHCR publication
 - sibling `../connect-ai/k8s/zworkers/` image tag, env contract, probes, backup, and ingress
 

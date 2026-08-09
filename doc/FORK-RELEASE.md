@@ -8,6 +8,10 @@ workflow is administratively disabled in `ZurabDev/paperclip`; keep its upstream
 so upstream workflow contract tests continue to pass. Verify `gh workflow list --all` reports it
 as `disabled_manually` after every fork recreation.
 
+The `commitperclip PR Review` workflow is also disabled in the fork because GitHub Dependency
+Review does not support fork repositories. The main `PR` workflow remains the required Linux
+typecheck, test, build, and E2E gate.
+
 Deploy immutable `sha-<short-sha>` tags. Optional human release tags use
 `vYYYY.DDD.PATCH-cnt.N`; the Docker workflow also publishes the corresponding semver tag. Never
 deploy `latest`.

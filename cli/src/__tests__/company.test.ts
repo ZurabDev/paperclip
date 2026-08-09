@@ -42,7 +42,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 function company(overrides: Record<string, unknown> = {}) {
   return {
     id: COMPANY_ID,
-    name: "Paperclip",
+    name: "Zworker",
     description: null,
     status: "active",
     issuePrefix: "PAP",
@@ -106,7 +106,7 @@ describe("company CLI commands", () => {
       `http://paperclip.test/api/companies/${COMPANY_ID}`,
       expect.objectContaining({ method: "GET" }),
     );
-    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({ id: COMPANY_ID, name: "Paperclip" });
+    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({ id: COMPANY_ID, name: "Zworker" });
   });
 
   it("gets the current company from agent authentication when no company context is set", async () => {
@@ -134,7 +134,7 @@ describe("company CLI commands", () => {
       `http://paperclip.test/api/companies/${COMPANY_ID}`,
       expect.objectContaining({ method: "GET" }),
     );
-    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({ id: COMPANY_ID, name: "Paperclip" });
+    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({ id: COMPANY_ID, name: "Zworker" });
   });
 
   it("lists the scoped agent company when board-wide company listing is denied", async () => {
@@ -168,7 +168,7 @@ describe("company CLI commands", () => {
       `http://paperclip.test/api/companies/${COMPANY_ID}`,
       expect.objectContaining({ method: "GET" }),
     );
-    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject([{ id: COMPANY_ID, name: "Paperclip" }]);
+    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject([{ id: COMPANY_ID, name: "Zworker" }]);
   });
 
   it("explains that company creation requires board instance-admin authentication under agent auth", async () => {

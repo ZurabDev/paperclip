@@ -1,7 +1,7 @@
 ---
 name: deal-with-security-advisory
 description: >
-  Handle confidential GitHub Security Advisory response for Paperclip. Use when
+  Handle confidential GitHub Security Advisory response for Zworker. Use when
   coordinating advisory triage, private-fork fixes, CVE/publication steps, and
   immediate security releases.
 ---

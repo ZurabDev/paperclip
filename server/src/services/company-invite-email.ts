@@ -167,23 +167,23 @@ function cleanHeaderValue(value: string) {
 }
 
 export function renderCompanyInviteEmail(input: CompanyInviteEmailInput) {
-  const companyName = cleanHeaderValue(input.companyName) || "your company";
-  const inviterName = cleanHeaderValue(input.inviterName ?? "A Paperclip administrator");
-  const subject = `You're invited to join ${companyName} on Paperclip`;
+  const companyName = cleanHeaderValue(input.companyName) || "вашу компанию";
+  const inviterName = cleanHeaderValue(input.inviterName ?? "Администратор Zworker");
+  const subject = `Вас пригласили присоединиться к ${companyName} в Zworker`;
   const expiry = input.expiresAt.toISOString();
   const text = [
-    `${inviterName} invited you to join ${companyName} on Paperclip.`,
+    `${inviterName} приглашает вас присоединиться к ${companyName} в Zworker.`,
     "",
-    `Accept the invitation: ${input.inviteUrl}`,
+    `Принять приглашение: ${input.inviteUrl}`,
     "",
-    `This single-use invitation expires at ${expiry}.`,
+    `Одноразовое приглашение действует до ${expiry}.`,
   ].join("\n");
   const html = `<!doctype html>
 <html><body style="font-family:Arial,sans-serif;color:#18181b;line-height:1.5">
-  <h1 style="font-size:20px">Join ${escapeHtml(companyName)} on Paperclip</h1>
-  <p>${escapeHtml(inviterName)} invited you to join <strong>${escapeHtml(companyName)}</strong>.</p>
-  <p><a href="${escapeHtml(input.inviteUrl)}" style="display:inline-block;background:#18181b;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Accept invitation</a></p>
-  <p style="color:#71717a;font-size:13px">This single-use invitation expires at ${escapeHtml(expiry)}.</p>
+  <h1 style="font-size:20px">Присоединяйтесь к ${escapeHtml(companyName)} в Zworker</h1>
+  <p>${escapeHtml(inviterName)} приглашает вас присоединиться к <strong>${escapeHtml(companyName)}</strong>.</p>
+  <p><a href="${escapeHtml(input.inviteUrl)}" style="display:inline-block;background:#18181b;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Принять приглашение</a></p>
+  <p style="color:#71717a;font-size:13px">Одноразовое приглашение действует до ${escapeHtml(expiry)}.</p>
 </body></html>`;
   return { subject, text, html };
 }
@@ -197,7 +197,7 @@ export function createCompanyInviteEmailService(
     return {
       async sendCompanyInvite() {
         throw new InviteEmailConfigurationError(
-          "Email delivery is not configured on this Paperclip instance",
+          "Email delivery is not configured on this Zworker instance",
         );
       },
     };

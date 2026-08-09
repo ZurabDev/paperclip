@@ -1,15 +1,15 @@
-# Paperclip MCP Server
+# Zworker MCP Server
 
-Model Context Protocol server for Paperclip.
+Model Context Protocol server for Zworker.
 
-This package is a thin MCP wrapper over the existing Paperclip REST API. It does
+This package is a thin MCP wrapper over the existing Zworker REST API. It does
 not talk to the database directly and it does not reimplement business logic.
 
 ## Authentication
 
 The server reads its configuration from environment variables:
 
-- `PAPERCLIP_API_URL` - Paperclip base URL, for example `http://localhost:3100`
+- `PAPERCLIP_API_URL` - Zworker base URL, for example `http://localhost:3100`
 - `PAPERCLIP_API_KEY` - bearer token used for `/api` requests
 - `PAPERCLIP_COMPANY_ID` - optional default company for company-scoped tools
 - `PAPERCLIP_AGENT_ID` - optional default agent for checkout helpers

@@ -71,7 +71,7 @@ vi.mock("./pages/audit/CompanyActivity", () => ({
 
 const PAP_COMPANY = {
   id: "company-1",
-  name: "Paperclip",
+  name: "Zworker",
   issuePrefix: "PAP",
   status: "active",
 };

@@ -1,14 +1,14 @@
 ---
 name: paperclip-page
 description: >
-  Publish static HTML pages and asset folders to the Paperclip S3/CloudFront page
+  Publish static HTML pages and asset folders to the Zworker S3/CloudFront page
   host. Use when asked to deploy, host, or share a persistent page, viewer,
   prototype, report, or static site without here.now.
 ---
 
-# Paperclip Page
+# Zworker Page
 
-Use this skill to publish a static directory to the configured Paperclip pages
+Use this skill to publish a static directory to the configured Zworker pages
 host, for example `https://pages.paperclip.ing/<slug>/`.
 
 ## Requirements
@@ -19,7 +19,7 @@ host, for example `https://pages.paperclip.ing/<slug>/`.
   - `PAPERCLIP_PAGE_BUCKET`
   - `PAPERCLIP_PAGE_BASE_URL`
   - `AWS_REGION`
-  - AWS credentials via Paperclip Secrets or an approved AWS vault
+  - AWS credentials via Zworker Secrets or an approved AWS vault
 - Optional environment variables:
   - `PAPERCLIP_PAGE_DEFAULT_PREFIX`
   - `PAPERCLIP_PAGE_AWS_PROFILE`
@@ -80,7 +80,7 @@ overwriting another page.
 - `Found symlink`: replace symlinks with real files before publishing.
 - `AccessDenied`: confirm the uploader IAM policy allows `ListBucket`,
   `GetObject`, and `PutObject` for the configured bucket/prefix, and that the
-  agent received the Paperclip Secrets.
+  agent received the Zworker Secrets.
 - Public URL verification failed: check CloudFront deployment/DNS, object
   existence, and that the distribution uses HTTPS with the private S3 REST
   origin.

@@ -60,7 +60,7 @@ curl -sS -X POST \
   --data-binary @workspace-file-work-product.json
 ```
 
-If the helper is unavailable, use the Paperclip API directly:
+If the helper is unavailable, use the Zworker API directly:
 
 ```bash
 curl -sS -X POST \

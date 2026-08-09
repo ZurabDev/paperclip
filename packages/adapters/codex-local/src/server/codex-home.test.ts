@@ -980,7 +980,7 @@ describe("stageCodexHomeForSync", () => {
   });
 
   // Circular symlinks inside skills/ must be silently skipped (not throw ELOOP).
-  // Skill symlinks that point OUTSIDE skills/ are intentional design (Paperclip
+  // Skill symlinks that point OUTSIDE skills/ are intentional design (Zworker
   // stores skill packages in a shared location) and are dereferenced normally;
   // all resulting files land 0600 inside the 0700 staged dir.
   it("skips circular skill symlinks (ELOOP) without throwing", async () => {

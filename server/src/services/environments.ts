@@ -43,7 +43,7 @@ type EnvironmentRow = typeof environments.$inferSelect;
 type EnvironmentLeaseRow = typeof environmentLeases.$inferSelect;
 const DEFAULT_LOCAL_ENVIRONMENT_NAME = "Local";
 const DEFAULT_LOCAL_ENVIRONMENT_DESCRIPTION =
-  "Default execution environment for Paperclip runs on this machine.";
+  "Default execution environment for Zworker runs on this machine.";
 
 const DEFAULT_KUBERNETES_ENVIRONMENT_NAME = "Kubernetes Sandbox";
 const DEFAULT_KUBERNETES_ENVIRONMENT_DESCRIPTION =
@@ -309,7 +309,7 @@ function mergeManagedEnvironmentMetadata(
 
 export function environmentService(db: Db) {
   /**
-   * Idempotently ensure THE Paperclip-managed sandbox environment for this
+   * Idempotently ensure THE Zworker-managed sandbox environment for this
    * instance, configured for an arbitrary sandbox provider plugin. Mirrors
    * `ensureLocalEnvironment`; the partial unique index
    * `environments_managed_sandbox_idx` enforces at most one managed sandbox
@@ -548,7 +548,7 @@ export function environmentService(db: Db) {
           let baselineHash = baseline?.stockHash ?? latestStockHash;
 
           // Provider unavailability is an operational state transition, not
-          // an operator edit. If the binding records that Paperclip archived
+          // an operator edit. If the binding records that Zworker archived
           // this row, restore only its availability status. Keep every other
           // operator-modified field intact and leave the stock update pending.
           // A manually archived row still has an active binding baseline, so
@@ -694,7 +694,7 @@ export function environmentService(db: Db) {
   };
 
   /**
-   * Archive the Paperclip-managed sandbox row when its provider became
+   * Archive the Zworker-managed sandbox row when its provider became
    * unavailable (plugin missing, not ready, or its worker not running), so
    * run scheduling stops selecting an environment whose lease acquisition
    * cannot succeed (`resolveEnvironment` rejects non-active rows).
@@ -761,7 +761,7 @@ export function environmentService(db: Db) {
         .then((rows) => rows[0] ?? null);
       if (!archived) return null;
 
-      // Archival is a Paperclip-owned availability transition. Record only
+      // Archival is a Zworker-owned availability transition. Record only
       // that status change in each installed baseline. Deriving the new hash
       // from defaultsJson keeps operator-modified row fields out of stock.
       for (const binding of bindings) {

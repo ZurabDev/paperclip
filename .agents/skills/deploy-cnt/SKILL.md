@@ -5,15 +5,15 @@ description: Verify, publish, deploy, smoke-test, or roll back the ZurabDev/pape
 
 # Deploy CNT
 
-Deploy one multi-company Paperclip instance at `zworkers.cnt.me`. Read
+Deploy one multi-company Zworker instance at `zworkers.cnt.me`. Read
 `../../../doc/CNT-SELF-HOSTING.md`, `../../../doc/FORK-RELEASE.md`, and
 `references/release-checklist.md` before changing production.
 
 ## Mandatory sequence
 
 1. Run `node .agents/skills/deploy-cnt/scripts/preflight.mjs`.
-2. Verify the Paperclip commit with frozen install, typecheck, tests, and build.
-3. Commit and push Paperclip. Wait for the fork `Docker` workflow to publish both architectures.
+2. Verify the Zworker commit with frozen install, typecheck, tests, and build.
+3. Commit and push Zworker. Wait for the fork `Docker` workflow to publish both architectures.
 4. Resolve the exact `sha-<short-sha>` manifest; never deploy `latest`.
 5. Create and verify an on-demand `zworkers-backup` job.
 6. In the private sibling `connect-ai` repo, update only `k8s/zworkers/values.yaml`, render the

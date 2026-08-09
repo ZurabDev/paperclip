@@ -240,7 +240,7 @@ const APPROVED_STDIO_TEMPLATES: Record<string, {
   tools: McpToolDescriptor[];
 }> = {
   "paperclip.echo-calculator-time": {
-    name: "Paperclip Echo / Calculator / Time fixture",
+    name: "Zworker Echo / Calculator / Time fixture",
     tools: [
       {
         name: "echo",
@@ -281,7 +281,7 @@ const APPROVED_STDIO_TEMPLATES: Record<string, {
     ],
   },
   "paperclip.synthetic-todo-kv": {
-    name: "Paperclip Synthetic Todo / KV fixture",
+    name: "Zworker Synthetic Todo / KV fixture",
     tools: [
       { name: "list_items", description: "List synthetic todo items.", annotations: { readOnlyHint: true } },
       { name: "create_item", description: "Create a synthetic todo item.", annotations: { readOnlyHint: false } },
@@ -412,13 +412,13 @@ const TOOL_EXAMPLES: ToolExampleDefinition[] = [
     title: "Safe read-only Todo / KV fixture",
     description: "Installs a deterministic local MCP fixture and grants only its read-only catalog entries.",
     applicationKey: "paperclip.examples.safe-read-only-todo-kv",
-    applicationName: "Paperclip example: Safe read-only Todo / KV",
+    applicationName: "Zworker example: Safe read-only Todo / KV",
     applicationDescription: "Deterministic MCP fixture for first-run tool governance checks.",
-    connectionName: "Paperclip example: Safe read-only Todo / KV",
+    connectionName: "Zworker example: Safe read-only Todo / KV",
     templateId: "paperclip.synthetic-todo-kv",
     profileKey: "paperclip.examples.safe-read-only-todo-kv.profile",
     profileName: "Example safe read-only tools",
-    profileDescription: "Allows only the read-only tools from the Paperclip Todo / KV example fixture.",
+    profileDescription: "Allows only the read-only tools from the Zworker Todo / KV example fixture.",
   },
 ];
 
@@ -2020,7 +2020,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
         threshold: "Warning at >=3 timeouts and >=10% timeout rate in 1 hour; critical at >=10 timeouts or >=25%.",
         observed: `${input.timeoutCount} timeout(s), ${input.timeoutRate}% timeout rate.`,
         description: "Tool gateway calls are timing out or being runtime-deferred at an elevated rate.",
-        firstResponderAction: "Check upstream MCP health, Paperclip runtime capacity, and recent gateway audit failures before retrying workloads.",
+        firstResponderAction: "Check upstream MCP health, Zworker runtime capacity, and recent gateway audit failures before retrying workloads.",
         runbookSection,
       }),
       runtimeAlert({
@@ -4240,7 +4240,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
 
     const host = new URL(input.redirectUri).host;
     const requestedMetadata = {
-      client_name: `Paperclip (${host})`,
+      client_name: `Zworker (${host})`,
       redirect_uris: [input.redirectUri],
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
@@ -7680,7 +7680,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
         if (typeof server.url === "string" || typeof server.endpoint === "string") {
           const headers = asRecord(server.headers);
           const credentialFields = Object.keys(headers).sort().map((key) => {
-            warnings.push(`Header ${key} will be stored as a Paperclip secret before activation.`);
+            warnings.push(`Header ${key} will be stored as a Zworker secret before activation.`);
             return {
               configPath: `headers.${key}`,
               label: key,
@@ -7701,7 +7701,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
           };
         }
         if (typeof server.command === "string") {
-          warnings.push("Imported stdio commands stay draft-only unless mapped to an approved Paperclip template.");
+          warnings.push("Imported stdio commands stay draft-only unless mapped to an approved Zworker template.");
           return {
             name,
             transport: "local_stdio" as const,

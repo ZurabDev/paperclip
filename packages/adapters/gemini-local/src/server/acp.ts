@@ -390,7 +390,7 @@ export async function testGeminiAcpEnvironment(
       code: "gemini_acp_remote_target",
       level: "info",
       message: "Gemini ACP will run against the remote execution environment.",
-      hint: "Remote ACP requires a bidirectional process target such as SSH or Paperclip's sandbox process-session bridge.",
+      hint: "Remote ACP requires a bidirectional process target such as SSH or Zworker's sandbox process-session bridge.",
     });
   }
 

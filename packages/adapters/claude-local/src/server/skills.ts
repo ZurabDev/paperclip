@@ -37,10 +37,10 @@ async function buildClaudeSkillSnapshot(config: Record<string, unknown>): Promis
     adapterType: "claude_local",
     availableEntries,
     desiredSkills,
-    configuredDetail: "Will be materialized into the stable Paperclip-managed Claude prompt bundle on the next run.",
+    configuredDetail: "Will be materialized into the stable Zworker-managed Claude prompt bundle on the next run.",
     externalInstalled: installed,
     externalLocationLabel: "~/.claude/skills",
-    externalDetail: "Installed outside Paperclip management in the Claude skills home.",
+    externalDetail: "Installed outside Zworker management in the Claude skills home.",
     skillsHome,
   });
 }

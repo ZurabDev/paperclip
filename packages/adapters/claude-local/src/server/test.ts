@@ -206,14 +206,14 @@ export async function testEnvironment(
       checks.push({
         code: "claude_managed_config_dir",
         level: "info",
-        message: "Sandbox probe is using Paperclip-managed Claude config materialization.",
+        message: "Sandbox probe is using Zworker-managed Claude config materialization.",
         detail: remoteClaudeConfigDir,
       });
     } catch (err) {
       checks.push({
         code: "claude_managed_config_dir_failed",
         level: "error",
-        message: "Could not materialize Paperclip-managed Claude config for the sandbox probe.",
+        message: "Could not materialize Zworker-managed Claude config for the sandbox probe.",
         detail: err instanceof Error ? err.message : String(err),
       });
     } finally {
@@ -240,7 +240,7 @@ export async function testEnvironment(
     });
   }
 
-  // When probing a remote target, the Paperclip host's process.env does not
+  // When probing a remote target, the Zworker host's process.env does not
   // reflect what the agent will actually see at runtime. Only consider env
   // vars from the adapter config in that case; the probe itself will surface
   // any auth issues on the remote box.

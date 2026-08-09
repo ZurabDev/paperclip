@@ -1,6 +1,6 @@
-# Paperclip Design Principles
+# Zworker Design Principles
 
-**Status:** v0.3 — anchor document for design-language simplification. Governs structure, not brand. Brand values (color, type, iconography) are intentionally unspecified: they are being redesigned and will land as token values only. Nothing in `ui/` may hardcode them. Spacing/radius scales are likewise TBD pending the token audit (see Principle 3).
+**Status:** v0.4 — anchor document for design-language simplification and the CNT fork's Zworker identity. Runtime visual values still land as tokens only; the approved application mark is the Zworker asset in `ui/public/zworker-logo.png`. Nothing in `ui/` may hardcode replacement brand colors. Spacing/radius scales remain TBD pending the token audit (see Principle 3).
 
 Changes from v0.2: token layer location corrected to the repo's real source (`ui/src/index.css`); existing token tiers inventoried; snapshot-coverage scope bounded for Run 1; the issue→task copy rename moved out of the zero-visual-change run.
 
@@ -10,7 +10,9 @@ Agents and humans modifying `ui/` treat this file as the source of truth for des
 
 ## Product stance
 
-Paperclip is an operational control plane: org charts, tasks, heartbeat runs, budgets, approvals, audit logs. The user is an operator scanning state and making decisions. Every screen should answer, in order: *what is happening, does it need me, what do I do about it.* Density in service of scanning beats whitespace in service of aesthetics — but density comes from information, never from chrome.
+Zworker is an operational control plane: org charts, tasks, heartbeat runs, budgets, approvals, audit logs. The user is an operator scanning state and making decisions. Every screen should answer, in order: *what is happening, does it need me, what do I do about it.* Density in service of scanning beats whitespace in service of aesthetics — but density comes from information, never from chrome.
+
+The public name is **Zworker**, the primary operator language is Russian, and the canonical mark is `ui/public/zworker-logo.png`. Product copy must use the localization layer; user-authored content, code, logs, identifiers, and terminal output stay verbatim. Legacy `paperclipai`, `PAPERCLIP_*`, `.paperclip`, and `@paperclipai/*` names are compatibility contracts, not visual brand choices.
 
 ## The token layer (where visual values live)
 

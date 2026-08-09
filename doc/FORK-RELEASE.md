@@ -1,4 +1,4 @@
-# Releasing the CNT Paperclip fork
+# Releasing the CNT Zworker fork
 
 ## Artifact model
 

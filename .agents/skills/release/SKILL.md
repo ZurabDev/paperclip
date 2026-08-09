@@ -1,14 +1,14 @@
 ---
 name: release
 description: >
-  Coordinate a full Paperclip release across engineering verification, npm,
+  Coordinate a full Zworker release across engineering verification, npm,
   GitHub, smoke testing, and announcement follow-up. Use when leadership asks
   to ship a release, not merely to discuss versioning.
 ---
 
 # Release Coordination Skill
 
-Run the full Paperclip maintainer release workflow, not just an npm publish.
+Run the full Zworker maintainer release workflow, not just an npm publish.
 
 This skill coordinates:
 
@@ -40,7 +40,7 @@ Before proceeding, verify all of the following:
 4. The candidate SHA has passed the verification gate or is about to.
 5. If manifests changed, the CI-owned `pnpm-lock.yaml` refresh is already merged on `master`.
 6. npm publish rights are available through GitHub trusted publishing, or through local npm auth for emergency/manual use.
-7. If running through Paperclip, you have issue context for status updates and follow-up task creation.
+7. If running through Zworker, you have issue context for status updates and follow-up task creation.
 
 If any precondition fails, stop and report the blocker.
 
@@ -55,7 +55,7 @@ Collect these inputs up front:
 
 ## Step 0 — Release Model
 
-Paperclip now uses a commit-driven release model:
+Zworker now uses a commit-driven release model:
 
 1. every push to `master` publishes a canary automatically
 2. canaries use `YYYY.MDD.P-canary.N`
@@ -212,7 +212,7 @@ Create or verify follow-up work for:
 
 - website changelog publishing
 - launch post / social announcement
-- release summary in Paperclip issue context
+- release summary in Zworker issue context
 
 These should reference the stable release, not the canary.
 
@@ -234,8 +234,8 @@ POST /api/companies/:companyId/cases
 {
   "caseType": "release",
   "key": "paperclip-release:vYYYY.MDD.P",
-  "title": "Paperclip vYYYY.MDD.P release",
-  "summary": "Stable release content package for Paperclip vYYYY.MDD.P.",
+  "title": "Zworker vYYYY.MDD.P release",
+  "summary": "Stable release content package for Zworker vYYYY.MDD.P.",
   "status": "in_progress",
   "fields": {
     "schema_version": 1,
@@ -268,9 +268,9 @@ Write the parent body document immediately after the upsert:
 ```http
 PUT /api/cases/:releaseCaseId/documents/body
 {
-  "title": "Paperclip vYYYY.MDD.P release body",
+  "title": "Zworker vYYYY.MDD.P release body",
   "format": "markdown",
-  "body": "# Paperclip vYYYY.MDD.P\n\nRelease summary and links...",
+  "body": "# Zworker vYYYY.MDD.P\n\nRelease summary and links...",
   "changeSummary": "Initial release case body"
 }
 ```

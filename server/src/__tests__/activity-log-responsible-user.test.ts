@@ -190,7 +190,7 @@ describeEmbeddedPostgres("logActivity responsible-user stamping", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Zworker",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       defaultResponsibleUserId: "default-user",
       requireBoardApprovalForNewAgents: false,

@@ -113,34 +113,34 @@ tools, persistent memory, session persistence, skills, and MCP support.
 | env | object | {} | Extra environment variables |
 | promptTemplate | string | (default) | Custom prompt template with {{variable}} placeholders |
 
-## Hermes-Originated Paperclip Tasks
+## Hermes-Originated Zworker Tasks
 
-This adapter package also ships a Hermes-facing Paperclip task bridge skill:
+This adapter package also ships a Hermes-facing Zworker task bridge skill:
 \`paperclip-task-bridge\`. Use it when a user starts in Hermes and asks Hermes
-to create, comment on, update, or list Paperclip tasks.
+to create, comment on, update, or list Zworker tasks.
 
 Configure credentials through Hermes env/profile secrets, never in prompt text:
 
-- \`PAPERCLIP_API_URL\` - Paperclip base URL, with or without \`/api\`
-- \`PAPERCLIP_BRIDGE_API_KEY\` - Paperclip agent API key created with \`scope.kind = "task_bridge"\`
+- \`PAPERCLIP_API_URL\` - Zworker base URL, with or without \`/api\`
+- \`PAPERCLIP_BRIDGE_API_KEY\` - Zworker agent API key created with \`scope.kind = "task_bridge"\`
 - optional fallback \`PAPERCLIP_API_KEY\` - must still be a task_bridge key, never a normal claimed agent key
 - optional \`PAPERCLIP_COMPANY_ID\`, \`PAPERCLIP_AGENT_ID\`, and \`PAPERCLIP_RUN_ID\`
 
 The bridge is separate from adapter execution:
 
-- \`hermes_local\` means Paperclip shells out to local \`hermes chat\`.
-- \`hermes_gateway\` means Paperclip wakes remote Hermes through Hermes's API server.
-- \`paperclip-task-bridge\` means Hermes calls Paperclip's REST API to manage tasks.
+- \`hermes_local\` means Zworker shells out to local \`hermes chat\`.
+- \`hermes_gateway\` means Zworker wakes remote Hermes through Hermes's API server.
+- \`paperclip-task-bridge\` means Hermes calls Zworker's REST API to manage tasks.
 
 Create task bridge keys with a parent issue or project boundary. Do not expose
-normal claimed Paperclip agent API keys to internet-facing Hermes chat/webhook
+normal claimed Zworker agent API keys to internet-facing Hermes chat/webhook
 task-bridge surfaces.
 
 ## Available Template Variables
 
-- \`{{agentId}}\` — Paperclip agent ID
+- \`{{agentId}}\` — Zworker agent ID
 - \`{{agentName}}\` — Agent display name
-- \`{{companyId}}\` — Paperclip company ID
+- \`{{companyId}}\` — Zworker company ID
 - \`{{companyName}}\` — Company display name
 - \`{{runId}}\` — Current heartbeat run ID
 - \`{{taskId}}\` — Current task/issue ID (if assigned)

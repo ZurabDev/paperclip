@@ -176,7 +176,7 @@ describe("IssueRecoveryActionCard", () => {
     );
     expect(node.textContent).toContain("Task Needs Next Step");
     expect(node.textContent).toContain(
-      "Paperclip could not find a clear next step for this open task. Choose whether to continue work, send it for review, mark it done, or record what is blocking it.",
+      "Zworker could not find a clear next step for this open task. Choose whether to continue work, send it for review, mark it done, or record what is blocking it.",
     );
   });
 
@@ -205,7 +205,7 @@ describe("IssueRecoveryActionCard", () => {
     expect(section?.getAttribute("data-recovery-kind")).toBe("workspace_validation");
     expect(node.textContent).toContain("Workspace Validation");
     expect(node.textContent).toContain(
-      "Paperclip stopped this run because the task's git workspace could not be validated.",
+      "Zworker stopped this run because the task's git workspace could not be validated.",
     );
     expect(node.textContent).toContain("Repair the source issue workspace link");
   });
@@ -332,7 +332,7 @@ function buildWorkspaceValidationAction(
     actualHeadSha: "bbbbbbbbbbbb33334444",
     ancestryVerdict: "diverged",
     plainLanguageReason:
-      'The recorded branch "PAP-522-recorded" is not an ancestor of the checked-out branch "nleach/PAP-1405-live", so Paperclip cannot prove a forward-only reconciliation.',
+      'The recorded branch "PAP-522-recorded" is not an ancestor of the checked-out branch "nleach/PAP-1405-live", so Zworker cannot prove a forward-only reconciliation.',
     ...overrides.provenance,
   };
   return buildAction({

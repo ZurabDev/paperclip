@@ -1,4 +1,4 @@
-const CACHE_NAME = "paperclip-v2";
+const CACHE_NAME = "zworker-v1";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -34,7 +34,7 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(() => {
         if (request.mode === "navigate") {
-          return caches.match("/") || new Response("Offline", { status: 503 });
+          return caches.match("/") || new Response("Нет подключения", { status: 503 });
         }
         return caches.match(request);
       })

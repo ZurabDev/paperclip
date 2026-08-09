@@ -534,7 +534,7 @@ export function pluginRegistryService(db: Db) {
     },
 
     /**
-     * Create or update a persistent mapping between a Paperclip object and an
+     * Create or update a persistent mapping between a Zworker object and an
      * external entity.
      *
      * @param pluginId - The UUID of the plugin.

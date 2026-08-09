@@ -567,7 +567,7 @@ function paperclipIssue(overrides: Partial<Issue> = {}): Issue {
     goalId: null,
     parentId: null,
     title: "Design event ingestion controls",
-    description: "Decide which Paperclip issues, comments, and documents can be ingested into the wiki.",
+    description: "Decide which Zworker issues, comments, and documents can be ingested into the wiki.",
     status: "todo",
     workMode: "standard",
     priority: "medium",
@@ -1647,7 +1647,7 @@ Duplicate headings receive stable suffixes.
     ]);
   });
 
-  it("does not ingest Paperclip events until operator controls enable them", async () => {
+  it("does not ingest Zworker events until operator controls enable them", async () => {
     const harness = createTestHarness({ manifest });
     const issue = paperclipIssue();
     harness.seed({ issues: [issue] });
@@ -1670,7 +1670,7 @@ Duplicate headings receive stable suffixes.
     expect(harness.dbExecutes.some((execute) => execute.sql.includes("wiki_operations"))).toBe(false);
   });
 
-  it("records enabled Paperclip issue events as cursor observations without creating ingest operations", async () => {
+  it("records enabled Zworker issue events as cursor observations without creating ingest operations", async () => {
     const harness = createTestHarness({ manifest });
     const issue = paperclipIssue();
     harness.seed({ issues: [issue] });
@@ -1716,7 +1716,7 @@ Duplicate headings receive stable suffixes.
     ]));
   });
 
-  it("preserves Paperclip event ingestion sources when only enabled changes", async () => {
+  it("preserves Zworker event ingestion sources when only enabled changes", async () => {
     const harness = createTestHarness({ manifest });
 
     await plugin.definition.setup(harness.ctx);
@@ -1751,7 +1751,7 @@ Duplicate headings receive stable suffixes.
     });
   });
 
-  it("keeps Paperclip event cursor observations company scoped and ignores plugin-operation issues", async () => {
+  it("keeps Zworker event cursor observations company scoped and ignores plugin-operation issues", async () => {
     const harness = createTestHarness({ manifest });
     const visibleIssue = paperclipIssue({ projectId: "77777777-7777-4777-8777-777777777777" });
     const otherCompanyIssue = paperclipIssue({
@@ -1802,7 +1802,7 @@ Duplicate headings receive stable suffixes.
     ]));
   });
 
-  it("routes Paperclip issue, comment, and document event cursors only to the default space", async () => {
+  it("routes Zworker issue, comment, and document event cursors only to the default space", async () => {
     const harness = createTestHarness({ manifest });
     const issue = paperclipIssue({ projectId: "77777777-7777-4777-8777-777777777777" });
     harness.seed({ issues: [issue] });
@@ -1848,7 +1848,7 @@ Duplicate headings receive stable suffixes.
     expect(String(cursorWrites[2].params?.[9])).toContain('"lastSourceKind":"documents"');
   });
 
-  it("routes Paperclip events into an explicitly enabled shared non-default space", async () => {
+  it("routes Zworker events into an explicitly enabled shared non-default space", async () => {
     const harness = createTestHarness({ manifest });
     const project = existingProject();
     const issue = paperclipIssue({ projectId: project.id });
@@ -1942,7 +1942,7 @@ Duplicate headings receive stable suffixes.
     expect(nonDefaultCursorWrites).toHaveLength(1);
   });
 
-  it("assembles deterministic Paperclip source bundles with issue, document, and comment provenance", async () => {
+  it("assembles deterministic Zworker source bundles with issue, document, and comment provenance", async () => {
     const harness = createTestHarness({ manifest });
     const root = paperclipIssue({
       id: "77777777-7777-4777-8777-777777777781",
@@ -2214,7 +2214,7 @@ Duplicate headings receive stable suffixes.
     })).rejects.toThrow("whole-company backfill is not allowed");
   });
 
-  it("records estimated Paperclip distillation cost without refusing on legacy cost config", async () => {
+  it("records estimated Zworker distillation cost without refusing on legacy cost config", async () => {
     const harness = createTestHarness({
       manifest,
       config: {
@@ -2384,7 +2384,7 @@ Duplicate headings receive stable suffixes.
     expect(String(cursorWrites[0]?.params?.[9])).toContain('"configuredBy":"enable-active-projects"');
   });
 
-  it("backfills only the selected Paperclip project and date window", async () => {
+  it("backfills only the selected Zworker project and date window", async () => {
     const harness = createTestHarness({ manifest });
     const project = existingProject();
     const inWindow = paperclipIssue({
@@ -2443,7 +2443,7 @@ Duplicate headings receive stable suffixes.
     expect(String(workItemInsert?.params?.[9])).toContain('"backfillStartAt":"2026-04-01T00:00:00Z"');
   });
 
-  it("generates review-required Paperclip project page patches with provenance, index, and log updates", async () => {
+  it("generates review-required Zworker project page patches with provenance, index, and log updates", async () => {
     const harness = createTestHarness({ manifest });
     const project = existingProject();
     const issue = paperclipIssue({
@@ -2580,7 +2580,7 @@ Duplicate headings receive stable suffixes.
     expect(combinedPatchContents).not.toContain("sk-patchsecretdocumentvalue1234567890");
   });
 
-  it("auto-applies Paperclip project page patches by default when policy allows and records page bindings", async () => {
+  it("auto-applies Zworker project page patches by default when policy allows and records page bindings", async () => {
     const harness = createTestHarness({ manifest });
     const project = existingProject();
     const issue = paperclipIssue({
@@ -2644,7 +2644,7 @@ Duplicate headings receive stable suffixes.
     ]));
   });
 
-  it("refuses auto-apply Paperclip project page patches in authenticated/public deployments", async () => {
+  it("refuses auto-apply Zworker project page patches in authenticated/public deployments", async () => {
     process.env.PAPERCLIP_DEPLOYMENT_MODE = "authenticated";
     process.env.PAPERCLIP_DEPLOYMENT_EXPOSURE = "public";
     const harness = createTestHarness({ manifest, config: { autoApplyIngestPatches: true } });
@@ -2696,7 +2696,7 @@ Duplicate headings receive stable suffixes.
     );
   });
 
-  it("refuses stale project page hashes before writing generated Paperclip pages", async () => {
+  it("refuses stale project page hashes before writing generated Zworker pages", async () => {
     const harness = createTestHarness({ manifest, config: { autoApplyIngestPatches: true } });
     const project = existingProject();
     const issue = paperclipIssue({
@@ -2736,7 +2736,7 @@ Duplicate headings receive stable suffixes.
     expect(writes).toHaveLength(0);
   });
 
-  it("skips low-signal Paperclip source windows without proposing wiki writes", async () => {
+  it("skips low-signal Zworker source windows without proposing wiki writes", async () => {
     const harness = createTestHarness({ manifest });
     const project = existingProject();
     const issue = paperclipIssue({
@@ -3030,7 +3030,7 @@ Duplicate headings receive stable suffixes.
     expect(harness.dbExecutes.some((execute) => execute.sql.includes("wiki_sources"))).toBe(true);
   });
 
-  it("preserves manual source ingest for non-default spaces while refusing Paperclip distillation there", async () => {
+  it("preserves manual source ingest for non-default spaces while refusing Zworker distillation there", async () => {
     const harness = createTestHarness({ manifest });
     const writes: Array<{ path: string; contents: string }> = [];
     harness.ctx.localFolders.writeTextAtomic = async (_companyId, _folderKey, relativePath, contents) => {
@@ -3092,10 +3092,10 @@ Duplicate headings receive stable suffixes.
       companyId: COMPANY_ID,
       spaceSlug: created.space.slug,
       projectId: existingProject().id,
-    })).rejects.toThrow("Paperclip ingestion policy denied queue");
+    })).rejects.toThrow("Zworker ingestion policy denied queue");
   });
 
-  it("fails closed for direct Paperclip ingestion actions against restricted spaces", async () => {
+  it("fails closed for direct Zworker ingestion actions against restricted spaces", async () => {
     const harness = createTestHarness({ manifest });
     harness.seed({
       agents: [wikiMaintainerAgent()],
@@ -3142,7 +3142,7 @@ Duplicate headings receive stable suffixes.
       companyId: COMPANY_ID,
       spaceSlug: created.space.slug,
       projectId: existingProject().id,
-    })).rejects.toThrow("Paperclip ingestion policy denied queue");
+    })).rejects.toThrow("Zworker ingestion policy denied queue");
 
     const operations = await harness.ctx.issues.list({
       companyId: COMPANY_ID,
@@ -3152,7 +3152,7 @@ Duplicate headings receive stable suffixes.
     expect(harness.dbExecutes.some((execute) => execute.sql.includes("paperclip_distillation_work_items"))).toBe(false);
   });
 
-  it("re-checks Paperclip ingestion policy at execution time for queued work", async () => {
+  it("re-checks Zworker ingestion policy at execution time for queued work", async () => {
     const harness = createTestHarness({ manifest });
     const project = existingProject();
     const issue = paperclipIssue({
@@ -3202,12 +3202,12 @@ Duplicate headings receive stable suffixes.
     await expect(harness.performAction("create-paperclip-distillation-run", {
       companyId: COMPANY_ID,
       projectId: project.id,
-    })).rejects.toThrow("personal spaces cannot ingest Paperclip sources");
+    })).rejects.toThrow("personal spaces cannot ingest Zworker sources");
     expect(harness.dbExecutes.some((execute) =>
       execute.sql.includes("paperclip_distillation_runs") && execute.sql.includes("'source_ready'"))).toBe(false);
   });
 
-  it("queues Paperclip ingestion backfills for every selected project scope", async () => {
+  it("queues Zworker ingestion backfills for every selected project scope", async () => {
     const harness = createTestHarness({ manifest });
     await plugin.definition.setup(harness.ctx);
 
@@ -3240,7 +3240,7 @@ Duplicate headings receive stable suffixes.
     expect(harness.dbExecutes.filter((execute) => execute.sql.includes("paperclip_distillation_work_items"))).toHaveLength(2);
   });
 
-  it("rejects oversized Paperclip ingestion profile and source-scope payloads", async () => {
+  it("rejects oversized Zworker ingestion profile and source-scope payloads", async () => {
     const harness = createTestHarness({ manifest });
 
     await plugin.definition.setup(harness.ctx);
@@ -3249,7 +3249,7 @@ Duplicate headings receive stable suffixes.
       enabled: true,
       maxCharacters: 20001,
       sources: { issues: true },
-    })).rejects.toThrow("maxCharacters exceeds the hard Paperclip ingestion cap");
+    })).rejects.toThrow("maxCharacters exceeds the hard Zworker ingestion cap");
 
     await expect(harness.performAction("enable-paperclip-distillation-active-projects", {
       companyId: COMPANY_ID,
@@ -3266,7 +3266,7 @@ Duplicate headings receive stable suffixes.
       companyId: COMPANY_ID,
       projectId: "77777777-7777-4777-8777-777777777777",
       maxCharacters: 60001,
-    })).rejects.toThrow("maxCharacters exceeds the hard Paperclip ingestion cap");
+    })).rejects.toThrow("maxCharacters exceeds the hard Zworker ingestion cap");
   });
 
   it("keeps default-space files at the root and isolates managed spaces under slug prefixes", async () => {

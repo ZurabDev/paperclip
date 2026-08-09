@@ -16,7 +16,7 @@ describe("plugin manifest validators", () => {
       version: "0.1.0",
       displayName: "Compat Dashboard",
       description: "Dashboard-only plugin without access or authorization host APIs.",
-      author: "Paperclip",
+      author: "Zworker",
       categories: ["ui"],
       capabilities: ["ui.dashboardWidget.register"],
       entrypoints: {
@@ -45,7 +45,7 @@ describe("plugin manifest validators", () => {
       version: "0.1.0",
       displayName: "Template Provider",
       description: "Sandbox provider with captured template config binding.",
-      author: "Paperclip",
+      author: "Zworker",
       categories: ["automation"],
       capabilities: ["environment.drivers.register"],
       entrypoints: { worker: "./dist/worker.js" },
@@ -132,7 +132,7 @@ describe("plugin managed skill validators", () => {
     version: "0.1.0",
     displayName: "Managed Skills",
     description: "Managed skills test plugin.",
-    author: "Paperclip",
+    author: "Zworker",
     categories: ["automation"],
     entrypoints: { worker: "./dist/worker.js" },
   } as const;

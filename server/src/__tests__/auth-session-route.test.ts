@@ -410,6 +410,7 @@ describe("Cloud tenant company naming", () => {
   it.each([
     "paperclip-stack-purple-rain",
     "stack-purple-rain Paperclip",
+    "stack-purple-rain Zworker",
     ids.companyId,
   ])("repairs the known-bad machine name %s", (name) => {
     expect(isKnownBadCloudCompanyName(name, ids)).toBe(true);
@@ -417,8 +418,8 @@ describe("Cloud tenant company naming", () => {
 
   it.each([
     "Purple Rain",
-    "Paperclip Stack Purple Rain",
-    "The Purple Rain Paperclip",
+    "Zworker Stack Purple Rain",
+    "The Purple Rain Zworker",
   ])("preserves the genuine company name %s", (name) => {
     expect(isKnownBadCloudCompanyName(name, ids)).toBe(false);
   });

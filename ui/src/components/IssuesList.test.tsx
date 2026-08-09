@@ -608,7 +608,7 @@ describe("IssuesList", () => {
     });
     const project = {
       id: "project-1",
-      name: "Paperclip App",
+      name: "Zworker App",
       color: null,
       workspaces: [{ id: "project-workspace-1", name: "Primary workspace" }],
       primaryWorkspace: { id: "project-workspace-1" },

@@ -28,7 +28,7 @@ const manifest: PaperclipPluginManifestV1 = {
   version: "1.0.0",
   displayName: "Daytona Sandbox Provider",
   description: "Provides Daytona-backed sandboxes.",
-  author: "Paperclip",
+  author: "Zworker",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: { worker: "dist/worker.js" },

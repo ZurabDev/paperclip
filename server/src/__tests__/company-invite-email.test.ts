@@ -11,7 +11,7 @@ describe("company invite email", () => {
     expect(resolveInviteEmailConfig({
       SMTP_HOST: "mail.example.test",
       SMTP_PORT: "465",
-      SMTP_FROM_EMAIL: "Paperclip <noreply@example.test>",
+      SMTP_FROM_EMAIL: "Zworker <noreply@example.test>",
       SMTP_USERNAME: "mailer",
       SMTP_PASSWORD: "secret",
     })).toMatchObject({
@@ -50,7 +50,7 @@ describe("company invite email", () => {
     const service = createCompanyInviteEmailService({
       PAPERCLIP_EMAIL_PROVIDER: "resend",
       PAPERCLIP_RESEND_API_KEY: "re_test",
-      PAPERCLIP_EMAIL_FROM: "Paperclip <noreply@example.test>",
+      PAPERCLIP_EMAIL_FROM: "Zworker <noreply@example.test>",
     }, { resendClient: { emails: { send } } });
 
     await expect(service.sendCompanyInvite({
@@ -65,7 +65,7 @@ describe("company invite email", () => {
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
         to: ["invitee@example.test"],
-        subject: "You're invited to join Acme on Paperclip",
+        subject: "Вас пригласили присоединиться к Acme в Zworker",
       }),
       { idempotencyKey: "paperclip-invite-invite-1" },
     );

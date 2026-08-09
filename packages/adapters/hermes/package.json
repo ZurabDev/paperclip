@@ -1,10 +1,10 @@
 {
   "name": "@paperclipai/hermes-paperclip-adapter",
   "version": "0.3.1",
-  "description": "Paperclip adapters for Hermes Agent local CLI and Hermes Gateway HTTP/SSE runs",
+  "description": "Zworker adapters for Hermes Agent local CLI and Hermes Gateway HTTP/SSE runs",
   "type": "module",
   "license": "MIT",
-  "author": "Paperclip",
+  "author": "Zworker",
   "repository": {
     "type": "git",
     "url": "https://github.com/paperclipai/paperclip",

@@ -696,12 +696,12 @@ describe("MarkdownEditor", () => {
   });
 
   it("keeps mention queries active across spaces", () => {
-    expect(findMentionMatch("Ping @Paperclip App", "Ping @Paperclip App".length)).toEqual({
+    expect(findMentionMatch("Ping @Zworker App", "Ping @Zworker App".length)).toEqual({
       trigger: "mention",
       marker: "@",
-      query: "Paperclip App",
+      query: "Zworker App",
       atPos: 5,
-      endPos: "Ping @Paperclip App".length,
+      endPos: "Ping @Zworker App".length,
     });
   });
 
@@ -846,19 +846,20 @@ describe("MarkdownEditor", () => {
       {
         id: "project:project-123",
         kind: "project" as const,
-        name: "Paperclip App",
+        name: "Zworker App",
         projectId: "project-123",
         projectColor: "#336699",
       },
     ],
-    matchText = "Paperclip App",
+    matchText = "Zworker App",
   ): Promise<{ option: HTMLButtonElement; root: ReturnType<typeof createRoot>; menu: HTMLElement }> {
     const root = createRoot(container);
+    const mentionQuery = `@${matchText.slice(0, 3)}`;
 
     await act(async () => {
       root.render(
         <MarkdownEditor
-          value="@Pap"
+          value={mentionQuery}
           onChange={handleChange}
           mentions={mentions}
         />,
@@ -874,7 +875,7 @@ describe("MarkdownEditor", () => {
 
     const selection = window.getSelection();
     const range = document.createRange();
-    range.setStart(textNode!, "@Pap".length);
+    range.setStart(textNode!, mentionQuery.length);
     range.collapse(true);
     selection?.removeAllRanges();
     selection?.addRange(range);
@@ -905,7 +906,7 @@ describe("MarkdownEditor", () => {
     });
 
     expect(handleChange).toHaveBeenCalledWith(
-      `[@Paperclip App](${buildProjectMentionHref("project-123", "#336699")}) `,
+      `[@Zworker App](${buildProjectMentionHref("project-123", "#336699")}) `,
     );
 
     await act(async () => {
@@ -1006,7 +1007,7 @@ describe("MarkdownEditor", () => {
     const mentions = Array.from({ length: 12 }, (_, index) => ({
       id: `project:project-${index}`,
       kind: "project" as const,
-      name: `Paperclip App ${index}`,
+      name: `Zworker App ${index}`,
       projectId: `project-${index}`,
       projectColor: "#336699",
     }));
@@ -1034,7 +1035,7 @@ describe("MarkdownEditor", () => {
     const mentions = Array.from({ length: 60 }, (_, index) => ({
       id: `project:project-${index}`,
       kind: "project" as const,
-      name: `Paperclip App ${index}`,
+      name: `Zworker App ${index}`,
       projectId: `project-${index}`,
       projectColor: "#336699",
     }));
@@ -1060,7 +1061,7 @@ describe("MarkdownEditor", () => {
     const mentions = Array.from({ length: 12 }, (_, index) => ({
       id: `project:project-${index}`,
       kind: "project" as const,
-      name: `Paperclip App ${index}`,
+      name: `Zworker App ${index}`,
       projectId: `project-${index}`,
       projectColor: "#336699",
     }));

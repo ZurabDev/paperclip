@@ -1,14 +1,14 @@
-# Paperclip Page Skill
+# Zworker Page Skill
 
-`paperclip-page` publishes static page directories to a Paperclip-controlled S3
-bucket served through CloudFront. It is the durable Paperclip-owned replacement
+`paperclip-page` publishes static page directories to a Zworker-controlled S3
+bucket served through CloudFront. It is the durable Zworker-owned replacement
 for quick `here.now`-style page sharing.
 
 The v1 security posture is:
 
 - CloudFront + ACM + Origin Access Control in front of a private S3 REST origin.
 - Public content only.
-- Dedicated uploader IAM identity, separate from Paperclip attachment storage.
+- Dedicated uploader IAM identity, separate from Zworker attachment storage.
 - No `s3:DeleteObject`, no `aws s3 sync --delete`, and no bucket/IAM/DNS changes
   from the publish helper.
 - Symlinks, hidden files, unsafe slugs, and accidental overwrites are rejected.
@@ -84,13 +84,13 @@ export PAPERCLIP_PAGE_DEFAULT_PREFIX=""
 export PAPERCLIP_PAGE_AWS_PROFILE=paperclip-page-uploader
 ```
 
-Recommended Paperclip secret names:
+Recommended Zworker secret names:
 
 - `paperclip-page-aws-access-key-id`
 - `paperclip-page-aws-secret-access-key`
 
 Bind those secrets into publisher agents as `AWS_ACCESS_KEY_ID` and
-`AWS_SECRET_ACCESS_KEY`. Do not reuse Paperclip's internal S3 attachment/object
+`AWS_SECRET_ACCESS_KEY`. Do not reuse Zworker's internal S3 attachment/object
 storage credentials.
 
 ## AWS Setup
@@ -104,7 +104,7 @@ export AWS_REGION=us-east-1
 export BUCKET=paperclip-pages-prod
 export DOMAIN=pages.paperclip.ing
 export UPLOADER_USER=paperclip-page-uploader
-export CLOUDFRONT_COMMENT="Paperclip pages"
+export CLOUDFRONT_COMMENT="Zworker pages"
 
 aws sts get-caller-identity --profile "$AWS_PROFILE"
 ```
@@ -465,7 +465,7 @@ Smoke check:
 curl -I "https://$DOMAIN/404.html"
 ```
 
-## Paperclip Secrets
+## Zworker Secrets
 
 Create secrets from environment variables so values do not land in shell history:
 
@@ -512,9 +512,9 @@ Create or update the company skill from this package:
 ```bash
 pnpm paperclipai skills create \
   --company-id <company-id> \
-  --name "Paperclip Page" \
+  --name "Zworker Page" \
   --slug paperclip-page \
-  --description "Publish static pages to the Paperclip pages host" \
+  --description "Publish static pages to the Zworker pages host" \
   --body-file .agents/skills/paperclip-page/SKILL.md
 ```
 
@@ -541,7 +541,7 @@ aws iam create-access-key \
 chmod 600 /tmp/paperclip-page-uploader-key-rotation.json
 ```
 
-2. Store new secret versions in Paperclip Secrets.
+2. Store new secret versions in Zworker Secrets.
 3. Update agent env bindings to the new versions or `latest`.
 4. Run a dry-run and a small publish smoke.
 5. Disable the old key:

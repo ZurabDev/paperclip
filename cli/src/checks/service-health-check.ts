@@ -91,7 +91,7 @@ export async function serviceHealthChecks(
           name: "Service runtime",
           status: "fail",
           message: health.ok
-            ? `${status.serviceName} is inactive but the configured port is serving another Paperclip process`
+            ? `${status.serviceName} is inactive but the configured port is serving another Zworker process`
             : `${status.serviceName} is ${status.detail ?? "inactive"}`,
           repairHint: "Run `paperclipai service start`, or stop the conflicting foreground process first",
         },

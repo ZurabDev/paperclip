@@ -1,24 +1,24 @@
 ---
 name: paperclip-create-plugin
 description: >
-  Create and develop external Paperclip plugins with the CLI-first workflow. Use
+  Create and develop external Zworker plugins with the CLI-first workflow. Use
   when scaffolding a plugin, iterating on a local plugin, installing it into
-  Paperclip, or updating plugin authoring docs.
+  Zworker, or updating plugin authoring docs.
 ---
 
-# Create and develop a Paperclip plugin
+# Create and develop a Zworker plugin
 
-Use this skill when the task is to create, scaffold, or iterate on a Paperclip plugin against a local Paperclip instance.
+Use this skill when the task is to create, scaffold, or iterate on a Zworker plugin against a local Zworker instance.
 
-## 1. Default: build the plugin OUTSIDE Paperclip core
+## 1. Default: build the plugin OUTSIDE Zworker core
 
 Plugins are their own packages. Unless the task **explicitly** asks for a bundled in-repo example, do not add plugin source under `packages/plugins/` in this repo.
 
-- Scaffold the plugin into a directory outside the Paperclip checkout (e.g. `~/dev/paperclip-plugins/<name>`).
-- Install it into the running Paperclip instance by local absolute path.
-- Edit code in the external package; let Paperclip pick up rebuilt output.
+- Scaffold the plugin into a directory outside the Zworker checkout (e.g. `~/dev/paperclip-plugins/<name>`).
+- Install it into the running Zworker instance by local absolute path.
+- Edit code in the external package; let Zworker pick up rebuilt output.
 
-Only edit Paperclip core itself when the user asks to surface a plugin as a bundled example (`server/src/routes/plugins.ts`, in-repo example lists, docs).
+Only edit Zworker core itself when the user asks to surface a plugin as a bundled example (`server/src/routes/plugins.ts`, in-repo example lists, docs).
 
 ## 2. Ground rules
 
@@ -51,7 +51,7 @@ Useful flags (all optional):
 - `--template <default|connector|workspace|environment>` — starter template.
 - `--category <connector|workspace|automation|ui|environment>` — manifest category.
 - `--display-name <name>`, `--description <text>`, `--author <name>` — manifest metadata.
-- `--sdk-path <path>` — snapshot the local SDK from a Paperclip checkout into `.paperclip-sdk/` (useful when developing against an unreleased SDK).
+- `--sdk-path <path>` — snapshot the local SDK from a Zworker checkout into `.paperclip-sdk/` (useful when developing against an unreleased SDK).
 
 On success the command prints the exact next commands (`cd`, `pnpm install`, `pnpm dev`, `paperclipai plugin install <abs-path>`). Run them in order.
 
@@ -119,7 +119,7 @@ pnpm build
 
 If the plugin is already running under `pnpm dev`, you can keep the watcher up and run `pnpm typecheck` and `pnpm test` in a separate shell.
 
-If you changed Paperclip SDK/host/plugin runtime code in addition to the plugin, also run the relevant Paperclip workspace checks.
+If you changed Zworker SDK/host/plugin runtime code in addition to the plugin, also run the relevant Zworker workspace checks.
 
 ## 7. Success checklist (report this back)
 
@@ -133,7 +133,7 @@ When you finish a local plugin task, report:
 
 If any item is missing, mark it as such — do not silently skip.
 
-## 8. When NOT to edit Paperclip core
+## 8. When NOT to edit Zworker core
 
 Do not add the plugin under `packages/plugins/` or update bundled-example wiring unless the user explicitly asks for a bundled example. Local-path installs are the supported development model; npm packages are the production deployment path.
 

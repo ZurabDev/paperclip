@@ -1,6 +1,6 @@
 # CLI Reference
 
-Paperclip CLI now supports both:
+Zworker CLI now supports both:
 
 - installation and lifecycle management (`install`, `uninstall`, `update`, `upgrade`, `service`)
 - instance setup/diagnostics (`onboard`, `doctor`, `configure`, `env`, `allowed-hostname`, `env-lab`)
@@ -144,7 +144,7 @@ API base resolution order:
 1. `--api-base <url>`
 2. `PAPERCLIP_API_URL`
 3. selected context profile `apiBase`
-4. local Paperclip config server port
+4. local Zworker config server port
 5. `http://localhost:3100`
 
 Connection failures include the attempted URL and a `GET /api/health` check hint.
@@ -247,7 +247,7 @@ pnpm paperclipai issue release <issue-id>
 pnpm paperclipai issue force-release <issue-id>
 ```
 
-Issue subresources are exposed as Paperclip API wrappers. Commands that map to broad server schemas accept JSON payloads and validate them with shared schemas before sending.
+Issue subresources are exposed as Zworker API wrappers. Commands that map to broad server schemas accept JSON payloads and validate them with shared schemas before sending.
 
 ```sh
 pnpm paperclipai issue child:create <issue-id> --payload-json '{"title":"Child task"}'
@@ -374,12 +374,12 @@ pnpm paperclipai agent instructions-file:put <agent-id> --path AGENTS.md --conte
 pnpm paperclipai agent instructions-file:delete <agent-id> --path AGENTS.md
 ```
 
-Agent config, instructions, skills, project env, environment, secret, and workspace edits affect the next run. Active runs finish with the config they started with. When a saved session, reused workspace, or sandbox lease no longer matches the effective next-run config, Paperclip may start fresh execution and records non-sensitive freshness categories in run result JSON and workspace operation logs.
+Agent config, instructions, skills, project env, environment, secret, and workspace edits affect the next run. Active runs finish with the config they started with. When a saved session, reused workspace, or sandbox lease no longer matches the effective next-run config, Zworker may start fresh execution and records non-sensitive freshness categories in run result JSON and workspace operation logs.
 
-`agent local-cli` is the quickest way to run local Claude/Codex manually as a Paperclip agent:
+`agent local-cli` is the quickest way to run local Claude/Codex manually as a Zworker agent:
 
 - creates a new long-lived agent API key
-- installs missing Paperclip skills into `~/.codex/skills` and `~/.claude/skills`
+- installs missing Zworker skills into `~/.codex/skills` and `~/.claude/skills`
 - prints `export ...` lines for `PAPERCLIP_API_URL`, `PAPERCLIP_COMPANY_ID`, `PAPERCLIP_AGENT_ID`, and `PAPERCLIP_API_KEY`
 
 Example for shortname-based local setup:
@@ -410,7 +410,7 @@ pnpm paperclipai token board revoke <key-id>
 
 ## Run Commands
 
-`paperclipai run` without a subcommand still bootstraps and starts a local Paperclip instance. The subcommands below inspect and control API heartbeat runs.
+`paperclipai run` without a subcommand still bootstraps and starts a local Zworker instance. The subcommands below inspect and control API heartbeat runs.
 
 ```sh
 pnpm paperclipai run list --company-id <company-id> [--agent-id <agent-id>] [--limit 50]
@@ -447,7 +447,7 @@ pnpm paperclipai routine trigger:fire <public-id> [--payload-json '{...}']
 
 ## Prompt Handoff
 
-Prompt handoff creates Paperclip work. It does not create a chat session.
+Prompt handoff creates Zworker work. It does not create a chat session.
 
 ```sh
 pnpm paperclipai agent-prompt <agent-name-or-id> <agent-api-key> "Prompt here"
@@ -473,7 +473,7 @@ By default the command creates a `todo` issue assigned to the target agent and w
    with files on disk and reports an `AgentSkillSnapshot` (`skills agent list`).
    `skills agent sync` triggers this automatically after updating desired state.
 
-Required Paperclip runtime skills (heartbeat, etc.) remain server-enforced and
+Required Zworker runtime skills (heartbeat, etc.) remain server-enforced and
 are added on top of whatever the desired set names.
 
 Company skill mutations (`skills install`, `skills import`, `skills create`, and
@@ -485,7 +485,7 @@ also creates agents.
 
 ### Catalog (app-shipped skills)
 
-The Paperclip app ships a curated catalog under `@paperclipai/skills-catalog`.
+The Zworker app ships a curated catalog under `@paperclipai/skills-catalog`.
 Browse and inspect commands never mutate company state; `install` adds a catalog
 skill to the company library.
 
@@ -573,7 +573,7 @@ pnpm paperclipai skills agent clear <agent-id-or-shortname> --yes --company-id <
 `AgentSkillSnapshot`. `add` preserves all unnamed assignments, `remove` deletes
 only named assignments, and `replace` destructively overwrites the complete
 non-required desired skill set.
-`skills agent clear` sends an empty desired list. Required Paperclip skills are
+`skills agent clear` sends an empty desired list. Required Zworker skills are
 still enforced by the server in both cases.
 
 ### Notes
@@ -611,7 +611,7 @@ Preview/install options:
   explicit `canCreateAgents` permission.
 - `--request-approval-on-forbidden` turns a 403 install denial into a linked
   board approval request instead of a raw failed command; use
-  `--approval-issue-id <id>` to attach it to a specific issue. During Paperclip
+  `--approval-issue-id <id>` to attach it to a specific issue. During Zworker
   task runs with `PAPERCLIP_TASK_ID` set, this fallback is automatic so
   agent-run walkthroughs leave a pending approval path instead of a raw 403.
 - `--target-manager-agent-id <id>` or `--target-manager-slug <slug>` reparents
@@ -646,10 +646,10 @@ pnpm paperclipai secrets migrate-inline-env --company-id <company-id> [--apply]
 
 Secret listing and declarations never print secret values. `create` accepts
 `--value-env` so shell history does not capture the value. `link` records
-provider-owned references without copying the secret value into Paperclip.
+provider-owned references without copying the secret value into Zworker.
 For AWS-backed secrets, `secrets doctor` reports missing non-secret provider
 env and the expected AWS SDK runtime credential source; do not store AWS
-bootstrap credentials in Paperclip secrets.
+bootstrap credentials in Zworker secrets.
 
 Per-company provider vaults (multiple vault instances per provider, default
 vault selection, coming-soon GCP/Vault) can be configured from the board UI under
@@ -923,7 +923,7 @@ pnpm paperclipai heartbeat run --agent-id <agent-id> [--api-base http://localhos
 
 ## Local Storage Defaults
 
-Local Paperclip data lives under the selected instance root. `PAPERCLIP_HOME` chooses the home directory and `PAPERCLIP_INSTANCE_ID` chooses the instance.
+Local Zworker data lives under the selected instance root. `PAPERCLIP_HOME` chooses the home directory and `PAPERCLIP_INSTANCE_ID` chooses the instance.
 
 ```text
 ~/.paperclip/                                     # PAPERCLIP_HOME

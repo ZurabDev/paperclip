@@ -1,9 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <style>
-    path { stroke: #18181b; }
-    @media (prefers-color-scheme: dark) {
-      path { stroke: #e4e4e7; }
-    }
-  </style>
-  <path stroke-width="2" d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="navy" x1="22" y1="27" x2="104" y2="64" gradientUnits="userSpaceOnUse"><stop stop-color="#161b78"/><stop offset="1" stop-color="#19145f"/></linearGradient>
+    <linearGradient id="cyan" x1="19" y1="60" x2="106" y2="99" gradientUnits="userSpaceOnUse"><stop stop-color="#00bfe9"/><stop offset="1" stop-color="#12d1ed"/></linearGradient>
+    <linearGradient id="gold" x1="44" y1="94" x2="75" y2="57" gradientUnits="userSpaceOnUse"><stop stop-color="#ffd11a"/><stop offset="1" stop-color="#ffb900"/></linearGradient>
+  </defs>
+  <path d="M24 30H94C108 30 114 46 104 56L74 86" stroke="url(#navy)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M51 55L25 81C16 90 22 105 35 105H102" stroke="url(#cyan)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M43 95L73 65" stroke="url(#gold)" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="24" cy="30" r="11" fill="url(#navy)"/><circle cx="24" cy="30" r="4" fill="white"/>
+  <circle cx="73" cy="65" r="10" fill="url(#gold)"/><circle cx="73" cy="65" r="4" fill="white"/>
+  <circle cx="102" cy="105" r="11" fill="url(#cyan)"/><circle cx="102" cy="105" r="4" fill="white"/>
 </svg>

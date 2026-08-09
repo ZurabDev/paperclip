@@ -82,7 +82,7 @@ async function handleMcpGatewayProtocol(
         result: {
           protocolVersion: "2025-03-26",
           capabilities: { tools: {} },
-          serverInfo: { name: "Paperclip MCP Gateway", version: "1.0.0" },
+          serverInfo: { name: "Zworker MCP Gateway", version: "1.0.0" },
         },
       });
       return;

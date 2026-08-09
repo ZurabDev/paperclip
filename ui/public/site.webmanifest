@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Paperclip",
-  "short_name": "Paperclip",
-  "description": "AI-powered project management and agent coordination platform",
+  "name": "Zworker",
+  "short_name": "Zworker",
+  "description": "Русская платформа управления компаниями и координации ИИ-агентов",
   "start_url": "/",
   "scope": "/",
   "display": "browser",

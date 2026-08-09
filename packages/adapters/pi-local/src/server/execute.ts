@@ -527,7 +527,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     if (runtimeSessionId && !canResumeSession) {
       const staleSessionCwdNote =
         savedSessionCwd !== null && !sessionHeaderCwdMatches
-          ? ` Pi stored cwd "${savedSessionCwd}" in the session header, so Paperclip will start a fresh session for "${effectiveExecutionCwd}".`
+          ? ` Pi stored cwd "${savedSessionCwd}" in the session header, so Zworker will start a fresh session for "${effectiveExecutionCwd}".`
           : "";
       await onLog(
         "stdout",

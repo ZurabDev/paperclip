@@ -270,7 +270,7 @@ function buildManagedMcpBlock(input: {
   const usedNames = new Set<string>();
   const lines = [
     MANAGED_MCP_BLOCK_START,
-    "# Written by Paperclip for governed MCP gateway access. Do not edit this block by hand.",
+    "# Written by Zworker for governed MCP gateway access. Do not edit this block by hand.",
   ];
   input.gateways.forEach((gateway, index) => {
     const baseName = sanitizeMcpServerName(gateway.name, `gateway-${index + 1}`);
@@ -284,7 +284,7 @@ function buildManagedMcpBlock(input: {
     usedNames.add(managedName);
     if (directOverlap) {
       warnings.push(
-        `Found unmanaged Codex MCP server "${gateway.name}" overlapping a Paperclip-governed gateway; leaving the direct entry in place and adding managed gateway "${managedName}". Paperclip cannot enforce policies for that direct entry.`,
+        `Found unmanaged Codex MCP server "${gateway.name}" overlapping a Zworker-governed gateway; leaving the direct entry in place and adding managed gateway "${managedName}". Zworker cannot enforce policies for that direct entry.`,
       );
     }
     const url = new URL(gateway.endpointPath, input.apiBaseUrl).toString();
@@ -430,7 +430,7 @@ async function stageContainedSubtree(
  * leaving `0644` documents and `0755` scripts group/other-readable in the staged
  * asset; here all regular files are normalized to `0600` regardless of source mode.
  *
- * `sourceDir`'s *direct* children are the Paperclip-injected skill symlinks that
+ * `sourceDir`'s *direct* children are the Zworker-injected skill symlinks that
  * intentionally point into a shared skill store *outside* `CODEX_HOME/skills/`,
  * so each child is allowed to resolve anywhere — and when it resolves to a
  * directory it becomes the containment root for its own subtree. Everything
@@ -615,7 +615,7 @@ export async function seedManagedCodexHome(
 
     await onLog(
       "stdout",
-      `[paperclip] Using ${isWorktreeMode(env) ? "worktree-isolated" : "Paperclip-managed"} Codex home "${targetHome}" (seeded from "${sourceHome}").\n`,
+      `[paperclip] Using ${isWorktreeMode(env) ? "worktree-isolated" : "Zworker-managed"} Codex home "${targetHome}" (seeded from "${sourceHome}").\n`,
     );
   }
 
@@ -734,7 +734,7 @@ export interface CodexCredentialReadinessInput {
 }
 
 export interface CodexCredentialReadiness {
-  /** True when Paperclip owns the effective home and is responsible for its auth. */
+  /** True when Zworker owns the effective home and is responsible for its auth. */
   managed: boolean;
   authMode: CodexCredentialAuthMode;
   /** True when a run launched now would be able to authenticate. */
@@ -752,7 +752,7 @@ export interface CodexCredentialReadiness {
  * of dispatching a run that is guaranteed to fail with "no Codex credentials".
  *
  * - An external/user-supplied `CODEX_HOME` override manages its own auth, so it
- *   is always treated as ready (Paperclip must not seed or inspect it).
+ *   is always treated as ready (Zworker must not seed or inspect it).
  * - A non-empty resolved `OPENAI_API_KEY` means API-key auth, always ready.
  * - Otherwise (subscription mode) the run needs a usable `auth.json`. Because a
  *   managed home symlinks `auth.json` from the shared source home at seed time,
@@ -774,7 +774,7 @@ export async function evaluateCodexCredentialReadiness(
   const effectiveHome = configuredCodexHome ?? resolveManagedCodexHomeDir(env, input.companyId);
 
   if (!effectiveHomeIsManaged) {
-    // Genuine external override: Paperclip never seeds or inspects it.
+    // Genuine external override: Zworker never seeds or inspects it.
     return {
       managed: false,
       authMode: configuredApiKey ? "api" : "subscription",

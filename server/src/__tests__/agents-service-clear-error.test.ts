@@ -53,7 +53,7 @@ describeEmbeddedPostgres("agent service clearError", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Zworker",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -165,7 +165,7 @@ describeEmbeddedPostgres("agent service clearError", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Zworker",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -196,7 +196,7 @@ describeEmbeddedPostgres("agent service clearError", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Zworker",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });

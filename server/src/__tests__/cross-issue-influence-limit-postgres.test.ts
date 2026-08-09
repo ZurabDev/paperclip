@@ -49,7 +49,7 @@ describeEmbeddedPostgres("cross-issue influence limit PostgreSQL serialization",
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Zworker",
       issuePrefix: `C${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       defaultResponsibleUserId: "board-user",
     });

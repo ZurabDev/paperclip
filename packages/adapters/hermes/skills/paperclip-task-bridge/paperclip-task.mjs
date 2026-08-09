@@ -45,7 +45,7 @@ class UsageError extends Error {
 
 class ApiError extends Error {
   constructor(status, body) {
-    const message = typeof body?.error === "string" ? body.error : `Paperclip API request failed with status ${status}`;
+    const message = typeof body?.error === "string" ? body.error : `Zworker API request failed with status ${status}`;
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -166,7 +166,7 @@ async function resolveIdentity(config) {
   const agent = await apiFetch(config, "/agents/me");
   const companyId = config.companyId || agent.companyId;
   const agentId = config.agentId || agent.id;
-  if (!companyId || !agentId) throw new ApiError(500, { error: "Paperclip identity response did not include companyId and agent id" });
+  if (!companyId || !agentId) throw new ApiError(500, { error: "Zworker identity response did not include companyId and agent id" });
   return { companyId, agentId, agent };
 }
 

@@ -4,8 +4,16 @@ Guidance for human and AI contributors working in this repository.
 
 ## 1. Purpose
 
-Paperclip is a control plane for AI-agent companies.
+Zworker is a control plane for AI-agent companies.
 The current implementation target is V1 and is defined in `doc/SPEC-implementation.md`.
+
+### Zworker brand and Russian locale contract
+
+- The public product name in this CNT fork is **Zworker**. Use that exact capitalization in UI copy, CLI output, server-authored user messages, current documentation, release notes, browser metadata, and email copy.
+- The operator UI is Russian-first. New or changed operator-facing copy must have a Russian entry in `ui/src/i18n/ru-ui.json`; regenerate it with `pnpm i18n:ru:generate`. User-authored content, source code, logs, identifiers, and terminal output must never be machine-translated in the browser.
+- The canonical application logo is `doc/assets/zworkers-logo.png`; the production web asset is `ui/public/zworker-logo.png`. Do not reintroduce the legacy paperclip-shaped logo or old browser/PWA branding.
+- Run `pnpm check:zworker-brand` and `pnpm check:token-gates` for UI/brand changes.
+- Compatibility identifiers remain unchanged unless a separately reviewed migration says otherwise: repository/remotes, `@paperclipai/*` package names, the `paperclipai` CLI command, `.paperclip` data/config paths, `PAPERCLIP_*` environment variables, `X-Paperclip-*` API headers, database identifiers, and protocol/provider keys. These are implementation contracts, not public branding.
 
 ## 2. Read This First
 
@@ -32,7 +40,7 @@ Before making changes, read in this order:
 - `packages/skills-catalog/`: app-shipped skills catalog (`@paperclipai/skills-catalog`)
 - `packages/teams-catalog/`: app-shipped teams catalog (`@paperclipai/teams-catalog`)
 - `cli/`: `paperclipai` CLI package (published bin, agent-facing commands)
-- `skills/`: Paperclip runtime/operational skills (not part of the app catalog)
+- `skills/`: Zworker runtime/operational skills (not part of the app catalog)
 - `doc/`: operational and product docs
 
 ## 4. Dev Setup (Auto DB)
@@ -86,10 +94,10 @@ If you change schema/API behavior, update all impacted layers:
 Prefer additive updates. Keep `doc/SPEC.md` and `doc/SPEC-implementation.md` aligned.
 
 5. Keep repo plan docs dated and centralized.
-When you are creating a plan file in the repository itself, new plan documents belong in `doc/plans/` and should use `YYYY-MM-DD-slug.md` filenames. This does not replace Paperclip issue planning: if a Paperclip issue asks for a plan, update the issue `plan` document per the `paperclip` skill instead of creating a repo markdown file.
+When you are creating a plan file in the repository itself, new plan documents belong in `doc/plans/` and should use `YYYY-MM-DD-slug.md` filenames. This does not replace Zworker issue planning: if a Zworker issue asks for a plan, update the issue `plan` document per the `paperclip` skill instead of creating a repo markdown file.
 
 6. Attach inspectable generated artifacts.
-When your task produces a user-inspectable deliverable file, follow the Paperclip skill's "Generated Artifacts and Work Products" workflow before final disposition. In this repo, prefer the self-contained skill helper at `skills/paperclip/scripts/paperclip-upload-artifact.sh` so the file is available through the Paperclip API, create/update an artifact work product when the file is the deliverable, link the uploaded artifact in the final issue comment, and then set status. Do not rely on local filesystem paths as the only access path. If an important file intentionally remains workspace-only, create/update a work product with `metadata.resourceRef.kind: "workspace_file"` and a workspace-relative path, then name that work product and path in the final comment. Treat browse/search as a fallback for recovering workspace files, not the preferred deliverable path. See `doc/AGENT-ARTIFACTS.md` for details and `.mp4`/`.webm` examples.
+When your task produces a user-inspectable deliverable file, follow the Zworker skill's "Generated Artifacts and Work Products" workflow before final disposition. In this repo, prefer the self-contained skill helper at `skills/paperclip/scripts/paperclip-upload-artifact.sh` so the file is available through the Zworker API, create/update an artifact work product when the file is the deliverable, link the uploaded artifact in the final issue comment, and then set status. Do not rely on local filesystem paths as the only access path. If an important file intentionally remains workspace-only, create/update a work product with `metadata.resourceRef.kind: "workspace_file"` and a workspace-relative path, then name that work product and path in the final comment. Treat browse/search as a fallback for recovering workspace files, not the preferred deliverable path. See `doc/AGENT-ARTIFACTS.md` for details and `.mp4`/`.webm` examples.
 
 ## 6. Database Change Workflow
 

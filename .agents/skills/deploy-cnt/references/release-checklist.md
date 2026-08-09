@@ -1,7 +1,7 @@
 # CNT release checklist
 
 - Correct context: `admin-api.cnt.app`
-- Paperclip worktree clean and commit pushed
+- Zworker worktree clean and commit pushed
 - Full typecheck, Vitest, and build green
 - `ghcr.io/zurabdev/paperclip:sha-<short-sha>` multi-arch manifest present
 - Pre-upgrade `zworkers-backup` job complete

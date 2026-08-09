@@ -9,8 +9,8 @@ const manifest: PaperclipPluginManifestV1 = {
   version: PLUGIN_VERSION,
   displayName: "exe.dev Sandbox Provider",
   description:
-    "Sandbox provider plugin that provisions exe.dev VMs as Paperclip execution environments.",
-  author: "Paperclip",
+    "Sandbox provider plugin that provisions exe.dev VMs as Zworker execution environments.",
+  author: "Zworker",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: {
@@ -22,7 +22,7 @@ const manifest: PaperclipPluginManifestV1 = {
       kind: "sandbox_provider",
       displayName: "exe.dev VM",
       description:
-        "Provisions exe.dev VMs through the HTTPS API, then runs commands over direct SSH for long-lived Paperclip workloads.",
+        "Provisions exe.dev VMs through the HTTPS API, then runs commands over direct SSH for long-lived Zworker workloads.",
       configSchema: {
         type: "object",
         properties: {
@@ -31,7 +31,7 @@ const manifest: PaperclipPluginManifestV1 = {
             type: "string",
             format: "secret-ref",
             description:
-              "Paste your exe.dev API token, or pick a saved Paperclip secret. Create one at exe.dev → Settings → API tokens with `/exec` scope (`new`, `ls`, `rm`).",
+              "Paste your exe.dev API token, or pick a saved Zworker secret. Create one at exe.dev → Settings → API tokens with `/exec` scope (`new`, `ls`, `rm`).",
           },
           sshPrivateKey: {
             type: "string",
@@ -51,7 +51,7 @@ const manifest: PaperclipPluginManifestV1 = {
           sshIdentityFile: {
             type: "string",
             description:
-              "Absolute path to a private key on the Paperclip host. Used only when SSH Private Key is empty.",
+              "Absolute path to a private key on the Zworker host. Used only when SSH Private Key is empty.",
             "x-paperclip-advanced": true,
             "x-paperclip-group": "SSH access",
           },

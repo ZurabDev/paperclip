@@ -33,7 +33,7 @@ const MANIFEST: PaperclipPluginManifestV1 = {
   version: "1.0.0",
   displayName: "Demo plugin",
   description: "Regression fixture",
-  author: "Paperclip",
+  author: "Zworker",
   categories: ["automation"],
   capabilities: [],
   entrypoints: { worker: "dist/worker.js" },

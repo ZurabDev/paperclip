@@ -260,7 +260,7 @@ export function AppsConnect() {
           ? "Your authorization expired or was revoked. Reconnect to continue."
           : error instanceof Error
             ? error.message
-            : "Paperclip couldn’t start secure sign-in. Try again.",
+            : "Zworker couldn’t start secure sign-in. Try again.",
       );
     },
   });
@@ -322,7 +322,7 @@ export function AppsConnect() {
             ? "Your authorization expired or was revoked. Reconnect to continue."
             : error instanceof Error
               ? error.message
-              : "Paperclip couldn’t start secure sign-in. Try again.",
+              : "Zworker couldn’t start secure sign-in. Try again.",
         );
         return;
       }
@@ -377,7 +377,7 @@ export function AppsConnect() {
     if (directOAuth && directOAuthRetryingRef.current) return;
     if (directOAuth && (applicationsQuery.isError || connectionsQuery.isError)) {
       setOAuthPhase("error");
-      setOAuthError("Paperclip couldn’t check for an existing connection. Try again.");
+      setOAuthError("Zworker couldn’t check for an existing connection. Try again.");
       return;
     }
 
@@ -473,7 +473,7 @@ export function AppsConnect() {
             ]);
             if (applicationsResult.isError || connectionsResult.isError) {
               setOAuthPhase("error");
-              setOAuthError("Paperclip couldn’t check for an existing connection. Try again.");
+              setOAuthError("Zworker couldn’t check for an existing connection. Try again.");
               return;
             }
             const refreshedConnection = reusableOAuthConnection(
@@ -773,13 +773,13 @@ export function OAuthConnectStateScreen({
 }) {
   const status = phase === "entry"
     ? {
-        title: `Connect ${entry.name} to Paperclip`,
-        body: `Paperclip will open ${entry.name} so you can choose a workspace and approve access.`,
+        title: `Connect ${entry.name} to Zworker`,
+        body: `Zworker will open ${entry.name} so you can choose a workspace and approve access.`,
       }
     : phase === "starting"
       ? {
           title: "Preparing secure sign-in",
-          body: `Paperclip is creating a secure ${entry.name} connection.`,
+          body: `Zworker is creating a secure ${entry.name} connection.`,
         }
       : phase === "redirecting"
         ? {
@@ -788,7 +788,7 @@ export function OAuthConnectStateScreen({
           }
         : {
             title: `${entry.name} couldn’t connect`,
-            body: error ?? "Paperclip couldn’t start secure sign-in. Try again.",
+            body: error ?? "Zworker couldn’t start secure sign-in. Try again.",
           };
 
   return (
@@ -830,7 +830,7 @@ export function OAuthConnectStateScreen({
         </div>
         <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Lock className="h-3.5 w-3.5" />
-          Your authorization stays in Paperclip’s encrypted secret store.
+          Your authorization stays in Zworker’s encrypted secret store.
         </p>
       </div>
     </div>
@@ -881,7 +881,7 @@ function ZapierConnectStep({
           autoFocus
         />
         <p className="mt-2 text-xs text-muted-foreground">
-          The token is part of the URL. Paperclip stores it securely and checks the connection before enabling actions.
+          The token is part of the URL. Zworker stores it securely and checks the connection before enabling actions.
         </p>
         {link.trim() && !isZapierLink && (
           <p className="mt-2 text-xs text-destructive">Paste a valid Zapier URL to continue.</p>
@@ -988,7 +988,7 @@ function GalleryStep({
               disabled={oauthBlocked || unavailable}
               title={
                 unavailable
-                  ? `${app.name} isn't configured on this instance yet. Ask your Paperclip admin.`
+                  ? `${app.name} isn't configured on this instance yet. Ask your Zworker admin.`
                   : undefined
               }
               onClick={() => onPick(app)}
@@ -1104,7 +1104,7 @@ function GalleryStep({
           <ConnectMethodRow
             icon={TerminalSquare}
             title="Run your own"
-            description="Register a command Paperclip runs in your workspace for a tool that isn’t listed."
+            description="Register a command Zworker runs in your workspace for a tool that isn’t listed."
             onClick={onRunYourOwn}
           />
           <ConnectMethodRow
@@ -1710,7 +1710,7 @@ function WhoStep({
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Anyone you’ve added to Paperclip can use {appName} in their tasks. This is what most teams want.
+                Anyone you’ve added to Zworker can use {appName} in their tasks. This is what most teams want.
               </p>
             </div>
           </button>

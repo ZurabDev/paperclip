@@ -1502,7 +1502,7 @@ describeEmbeddedPostgres("low-trust red-team HTTP route regression suite", () =>
           instruction: "Continue from the sanitized quarantine stub only.",
         },
       });
-      expect(String(payload.message ?? "")).toContain("## Paperclip Wake Payload");
+      expect(String(payload.message ?? "")).toContain("## Zworker Wake Payload");
       expectNoCanary(payload, fixture.canaries.raw);
       gateway.releaseFirstWait();
       await waitFor(async () => {

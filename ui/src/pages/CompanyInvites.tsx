@@ -151,7 +151,7 @@ export function CompanyInvites() {
           <h1 className="text-lg font-semibold">Company Invites</h1>
         </div>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Invite people by email. Paperclip creates a single-use link and sends it automatically.
+          Invite people by email. Zworker creates a single-use link and sends it automatically.
         </p>
       </div>
 

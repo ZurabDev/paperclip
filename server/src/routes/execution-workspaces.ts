@@ -157,7 +157,7 @@ export function executionWorkspaceRoutes(db: Db, opts: { pluginWorkerManager?: P
 
     const workspaceCwd = existing.cwd;
     if (!workspaceCwd) {
-      res.status(422).json({ error: "Execution workspace needs a local path before Paperclip can run workspace commands" });
+      res.status(422).json({ error: "Execution workspace needs a local path before Zworker can run workspace commands" });
       return;
     }
 
@@ -321,7 +321,7 @@ export function executionWorkspaceRoutes(db: Db, opts: { pluginWorkerManager?: P
           }
           const availableWorkspace = await ensureWorkspaceAvailable();
           if (!availableWorkspace) {
-            throw new Error("Execution workspace needs a local path before Paperclip can run workspace commands");
+            throw new Error("Execution workspace needs a local path before Zworker can run workspace commands");
           }
           return await runWorkspaceJobForControl({
             actor: {
@@ -372,7 +372,7 @@ export function executionWorkspaceRoutes(db: Db, opts: { pluginWorkerManager?: P
         if (action === "start" || action === "restart") {
           const availableWorkspace = await ensureWorkspaceAvailable();
           if (!availableWorkspace) {
-            throw new Error("Execution workspace needs a local path before Paperclip can manage local runtime services");
+            throw new Error("Execution workspace needs a local path before Zworker can manage local runtime services");
           }
           const startedServices = await startRuntimeServicesForWorkspaceControl({
             db,

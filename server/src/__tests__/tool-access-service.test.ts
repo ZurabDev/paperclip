@@ -264,7 +264,7 @@ async function createBrokerConnection(
   const [application] = await db.insert(toolApplications).values({
     companyId,
     applicationKey: "paperclip-pages",
-    name: `Paperclip Pages ${randomUUID()}`,
+    name: `Zworker Pages ${randomUUID()}`,
     type: "mcp_http",
     status: "active",
   }).returning();
@@ -3300,7 +3300,7 @@ describeEmbeddedPostgres("tool access service", () => {
     expect(new URL(first.authorizationUrl).origin).toBe("https://mcp.notion.com");
     expect(new URL(concurrent.authorizationUrl).searchParams.get("client_id")).toBe("notion-dcr-client");
     expect(registrationBodies).toEqual([{
-      client_name: "Paperclip (paperclip-dev.tail29c1aa.ts.net)",
+      client_name: "Zworker (paperclip-dev.tail29c1aa.ts.net)",
       redirect_uris: [redirectUri],
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
@@ -6730,14 +6730,14 @@ describeEmbeddedPostgres("tool access service", () => {
           transport: "mcp_remote",
           status: "draft",
           config: { url: "https://mcp.example/github" },
-          warnings: [expect.stringContaining("Paperclip secret")],
+          warnings: [expect.stringContaining("Zworker secret")],
         }),
         expect.objectContaining({
           name: "local",
           transport: "local_stdio",
           status: "draft",
           config: { importedCommand: "npx", importedArgs: ["-y", "@example/local-mcp"] },
-          warnings: [expect.stringContaining("approved Paperclip template")],
+          warnings: [expect.stringContaining("approved Zworker template")],
         }),
       ]),
     );

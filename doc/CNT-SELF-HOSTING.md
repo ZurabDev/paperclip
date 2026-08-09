@@ -1,4 +1,4 @@
-# Paperclip self-hosting in CNT Kubernetes
+# Zworker self-hosting in CNT Kubernetes
 
 ## Production contract
 
@@ -11,7 +11,7 @@
 - Application state: one `ReadWriteOnce` PVC mounted at `/paperclip`
 - TLS: wildcard `cnt-me-ssl`, synchronized from `cnt-prod`
 
-Paperclip is a portfolio control plane. Companies are first-class records and operational data
+Zworker is a portfolio control plane. Companies are first-class records and operational data
 is scoped by `company_id`, so one deployment hosts all supported companies while keeping their
 data isolated. Creating one pod/database/domain per company defeats the intended model and is
 not the default architecture.
@@ -56,7 +56,7 @@ invite-only mode: ordinary public sign-up is rejected, while a new human followi
 unexpired targeted invitation may create the matching account. The invite token is passed in a
 dedicated request header and checked against the address before Better Auth creates the user.
 
-Human invites in authenticated mode require `inviteeEmail`. Paperclip creates a high-entropy,
+Human invites in authenticated mode require `inviteeEmail`. Zworker creates a high-entropy,
 single-use URL, sends it synchronously through SMTP or Resend, and records the delivery timestamp,
 provider, and provider message ID.
 The API returns success only after the provider accepts the message. A rejected provider request revokes the
@@ -109,8 +109,8 @@ kubectl -n zworkers create job --from=cronjob/zworkers-backup zworkers-backup-ma
 kubectl -n zworkers wait --for=condition=complete job -l app.kubernetes.io/component=backup --timeout=10m
 ```
 
-The chart backup CronJob uses a PostgreSQL client image because the Paperclip image does not ship
-`pg_dump`. Built-in Paperclip database backups are disabled. Restore order is database first,
+The chart backup CronJob uses a PostgreSQL client image because the Zworker image does not ship
+`pg_dump`. Built-in Zworker database backups are disabled. Restore order is database first,
 then the `/paperclip` PVC, then the exact prior image and the unchanged application secrets.
 
 ## Verification

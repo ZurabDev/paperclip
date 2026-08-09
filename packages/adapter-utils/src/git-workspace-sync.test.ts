@@ -40,7 +40,7 @@ describe("git workspace sync", () => {
     await mkdir(repo, { recursive: true });
     await git(repo, ["init"]);
     await git(repo, ["checkout", "-b", "main"]);
-    await git(repo, ["config", "user.name", "Paperclip Test"]);
+    await git(repo, ["config", "user.name", "Zworker Test"]);
     await git(repo, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(repo, "tracked.txt"), "base\n", "utf8");
     await git(repo, ["add", "tracked.txt"]);
@@ -149,7 +149,7 @@ describe("git workspace sync", () => {
       localDir: repo,
       snapshot: snapshot!,
     }, async (cloneDir) => {
-      await git(cloneDir, ["config", "user.name", "Paperclip Sandbox"]);
+      await git(cloneDir, ["config", "user.name", "Zworker Sandbox"]);
       await git(cloneDir, ["config", "user.email", "sandbox@paperclip.dev"]);
       await writeFile(path.join(cloneDir, "change.txt"), "sandbox change\n", "utf8");
       await git(cloneDir, ["add", "change.txt"]);
@@ -190,7 +190,7 @@ describe("git workspace sync", () => {
       })]);
       expect((await stat(emptyBundle)).size).toBe(0);
 
-      await git(remoteDir, ["config", "user.name", "Paperclip Remote"]);
+      await git(remoteDir, ["config", "user.name", "Zworker Remote"]);
       await git(remoteDir, ["config", "user.email", "remote@paperclip.dev"]);
       await writeFile(path.join(remoteDir, "tracked.txt"), "remote\n", "utf8");
       await git(remoteDir, ["commit", "-am", "remote update"]);
@@ -236,7 +236,7 @@ describe("git workspace sync", () => {
     // local-only commit S that forked from B and diverges from H.
     const sandbox = path.join(rootDir, "sandbox");
     await git(rootDir, ["clone", host, sandbox]);
-    await git(sandbox, ["config", "user.name", "Paperclip Remote"]);
+    await git(sandbox, ["config", "user.name", "Zworker Remote"]);
     await git(sandbox, ["config", "user.email", "remote@paperclip.dev"]);
     await writeFile(path.join(sandbox, "advance.txt"), "advance\n", "utf8");
     await git(sandbox, ["add", "-A"]);
@@ -289,7 +289,7 @@ describe("git workspace sync", () => {
 
     const sandbox = path.join(rootDir, "sandbox");
     await git(rootDir, ["clone", host, sandbox]);
-    await git(sandbox, ["config", "user.name", "Paperclip Remote"]);
+    await git(sandbox, ["config", "user.name", "Zworker Remote"]);
     await git(sandbox, ["config", "user.email", "remote@paperclip.dev"]);
     // Advance the merge-base past the host, then baseSha past that, then a
     // divergent local commit — so merge-base(baseSha, HEAD) is itself a commit

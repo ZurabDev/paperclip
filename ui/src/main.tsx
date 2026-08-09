@@ -20,6 +20,7 @@ import { PluginLauncherProvider } from "./plugins/launchers";
 import { startPerfMeasureReaper } from "./lib/perf-measure-reaper";
 import "@mdxeditor/editor/style.css";
 import "./index.css";
+import { RussianUiLocalization } from "./i18n/RussianUiLocalization";
 
 initPluginBridge(React, ReactDOM);
 
@@ -56,6 +57,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        <RussianUiLocalization />
         <BrowserRouter>
           <CompanyProvider>
             <EditorAutocompleteProvider>

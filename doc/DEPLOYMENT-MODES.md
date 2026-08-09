@@ -5,7 +5,7 @@ Date: 2026-02-23
 
 ## 1. Purpose
 
-Paperclip supports two runtime modes:
+Zworker supports two runtime modes:
 
 1. `local_trusted`
 2. `authenticated`
@@ -17,7 +17,7 @@ Paperclip supports two runtime modes:
 
 This keeps one authenticated auth stack while still separating low-friction private-network defaults from internet-facing hardening requirements.
 
-Paperclip now treats **bind** as a separate concern from auth:
+Zworker now treats **bind** as a separate concern from auth:
 
 - auth model: `local_trusted` vs `authenticated`, plus `private/public`
 - reachability model: `server.bind = loopback | lan | tailnet | custom`
@@ -117,7 +117,7 @@ This is required because user assignment paths validate active membership for `a
 
 ## 7. Local Trusted -> Authenticated Claim Flow
 
-When running `authenticated` mode, if the only instance admin is `local-board`, Paperclip emits a startup warning with a one-time high-entropy claim URL.
+When running `authenticated` mode, if the only instance admin is `local-board`, Zworker emits a startup warning with a one-time high-entropy claim URL.
 
 - URL format: `/board-claim/<token>?code=<code>`
 - intended use: signed-in human claims board ownership
@@ -133,10 +133,10 @@ This prevents lockout when a user migrates from long-running local trusted usage
 Fresh authenticated installs start in `bootstrap_pending` until the first
 `instance_admin` exists.
 
-For `authenticated/private`, Paperclip supports a browser-first setup path:
+For `authenticated/private`, Zworker supports a browser-first setup path:
 
-1. open the Paperclip URL from the private network or appliance UI
-2. sign in or create a Paperclip account
+1. open the Zworker URL from the private network or appliance UI
+2. sign in or create a Zworker account
 3. choose `Claim this instance` on the setup screen
 
 That browser claim promotes the signed-in session user to the first instance

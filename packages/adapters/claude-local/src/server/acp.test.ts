@@ -784,7 +784,7 @@ describe("claude_local ACP lane", () => {
 
     const description = "Update launch-card.svg and change the CTA to Try Team free.";
     const fullTaskMarkdown = [
-      "Paperclip task context:",
+      "Zworker task context:",
       "- Issue: \"PAP-15271\"",
       "- Title: \"Preserve the task brief\"",
       "",
@@ -794,7 +794,7 @@ describe("claude_local ACP lane", () => {
       "```",
     ].join("\n");
     const compactTaskMarkdown = [
-      "Paperclip task context:",
+      "Zworker task context:",
       "- Issue: \"PAP-15271\"",
       "- Title: \"Preserve the task brief\"",
     ].join("\n");
@@ -826,7 +826,7 @@ describe("claude_local ACP lane", () => {
     const first = await execute(buildContext(root, { context: wakeContext("issue_assigned") }));
     const freshPrompt = runtimes[0]?.startInputs[0]?.text ?? "";
     expect(freshPrompt.split(description)).toHaveLength(2);
-    expect(freshPrompt).toContain("Paperclip task context:");
+    expect(freshPrompt).toContain("Zworker task context:");
 
     const second = await execute(buildContext(root, {
       runtime: {
@@ -840,7 +840,7 @@ describe("claude_local ACP lane", () => {
     expect(second.exitCode).toBe(0);
     const resumePrompt = runtimes[1]?.startInputs[0]?.text ?? "";
     expect(resumePrompt).not.toContain(description);
-    expect(resumePrompt).toContain("Paperclip task context:");
+    expect(resumePrompt).toContain("Zworker task context:");
     expect(resumePrompt).toContain(
       "- issue description: omitted from this resume delta; fetch the issue if you need the latest brief",
     );

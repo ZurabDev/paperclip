@@ -163,7 +163,7 @@ describeEmbeddedPostgres.sequential("merged pull-request confirmation sweep", ()
     const agentId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Zworker",
       issuePrefix: "MPR",
       requireBoardApprovalForNewAgents: false,
     });

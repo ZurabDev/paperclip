@@ -88,7 +88,7 @@ describeEmbeddedPostgres("company skill import authorization routes", () => {
   }
 
   async function writeSkillFixture(companyId: string) {
-    if (!paperclipHome) throw new Error("Expected Paperclip test home");
+    if (!paperclipHome) throw new Error("Expected Zworker test home");
     // Local imports must originate from an approved root (managed-skill
     // directory or a configured workspace); a bare tmpdir is rejected with
     // skill_workspace_boundary_denied.

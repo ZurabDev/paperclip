@@ -9,7 +9,7 @@ const manifest: PaperclipPluginManifestV1 = {
   version: "0.1.0",
   displayName: "Workspace Changes",
   description: "Adds a Changes tab to execution and project workspaces using plugin-local Git diff computation and @pierre/diffs.",
-  author: "Paperclip",
+  author: "Zworker",
   categories: ["workspace", "ui"],
   capabilities: [
     "ui.detailTab.register",

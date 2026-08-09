@@ -1,6 +1,6 @@
-# Installing Paperclip
+# Installing Zworker
 
-Paperclip supports a managed installation, an ephemeral `npx` tryout, a
+Zworker supports a managed installation, an ephemeral `npx` tryout, a
 traditional global npm installation, and development from a source checkout.
 The managed installation is recommended because it provides atomic updates,
 rollback, git-ref installs, and a stable entrypoint for the background service.
@@ -77,7 +77,7 @@ Managed code is separate from instance data:
 ```
 
 The `paperclipai` shim remains stable while `current` switches atomically
-between complete payloads. Paperclip keeps the two previous managed payloads
+between complete payloads. Zworker keeps the two previous managed payloads
 for rollback. Configuration, databases, uploads, logs, secrets, and workspaces
 remain under `~/.paperclip/instances/` and are not stored inside CLI payloads.
 
@@ -128,7 +128,7 @@ Run onboarding after a non-interactive installation:
 paperclipai onboard
 ```
 
-Interactive onboarding asks whether Paperclip should run as a background
+Interactive onboarding asks whether Zworker should run as a background
 service when the platform supports one. Automated onboarding deliberately does
 not install a service unless explicitly requested:
 
@@ -150,7 +150,7 @@ paperclipai service logs -f
 paperclipai service uninstall
 ```
 
-Paperclip uses a systemd user service on Linux and WSL2 systems with user
+Zworker uses a systemd user service on Linux and WSL2 systems with user
 systemd, and a LaunchAgent on macOS. Containers, WSL1, and systems without a
 supported user service manager receive foreground `paperclipai run` guidance
 instead of a hard failure.
@@ -185,7 +185,7 @@ new CLI, atomically flip `current`, and restart an installed service. A failed
 install or verification leaves the previous payload active.
 
 If the service is stopped, start it with `paperclipai service start` before
-updating so Paperclip can take the safety backup. Use
+updating so Zworker can take the safety backup. Use
 `paperclipai update --no-backup` only when you intentionally accept updating
 without that rollback safeguard. A never-onboarded instance with no config or
 instance data skips the backup automatically because there is nothing to save.
@@ -253,4 +253,4 @@ paperclipai uninstall
 `paperclipai uninstall` removes the managed shim, manifest, and CLI payloads.
 It deliberately preserves `~/.paperclip/instances/`, including configuration,
 databases, uploads, logs, secrets, backups, and workspaces. Back up and remove
-that data separately only when you intend to delete the Paperclip instance.
+that data separately only when you intend to delete the Zworker instance.

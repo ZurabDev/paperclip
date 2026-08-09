@@ -257,12 +257,12 @@ export function parseManagedConfigEnv(env: ManagedConfigEnv): ManagedInstanceCon
     if (!Array.isArray(doc.environments)) {
       fail(`"environments" must be an array of environment objects (got ${describeJsonValue(doc.environments)})`);
     }
-    // The DB enforces at most ONE Paperclip-managed sandbox row per instance
+    // The DB enforces at most ONE Zworker-managed sandbox row per instance
     // (partial unique index `environments_managed_sandbox_idx`); every entry
     // here provisions that row, so a longer list can never be satisfied.
     if (doc.environments.length > 1) {
       fail(
-        `"environments" supports at most one entry: each entry provisions the single Paperclip-managed sandbox environment (DB invariant environments_managed_sandbox_idx)`,
+        `"environments" supports at most one entry: each entry provisions the single Zworker-managed sandbox environment (DB invariant environments_managed_sandbox_idx)`,
       );
     }
     for (const [index, entry] of doc.environments.entries()) {

@@ -1,6 +1,6 @@
 # Telemetry Data Contract
 
-This document explains how contributors should use Paperclip's public telemetry
+This document explains how contributors should use Zworker's public telemetry
 contract. It intentionally does not list individual events or dimensions.
 
 The canonical source for first-party event names, dimensions, optionality,
@@ -33,7 +33,7 @@ will drift as the generated contract changes.
 
 ## Emission Boundary
 
-Paperclip telemetry uses named events with explicit dimension fields. Treat
+Zworker telemetry uses named events with explicit dimension fields. Treat
 open-ended string dimensions as public contract values, not as a place for user
 content or private operational data. Do not send PII, secrets, credentials,
 private paths, prompts, model output, or other sensitive values through
@@ -57,13 +57,13 @@ contract. Do not emit private source material in telemetry dimensions.
 
 ## Sandbox Startup Trace Spans
 
-Paperclip opens OpenTelemetry spans on the sandbox start path. These spans are a
+Zworker opens OpenTelemetry spans on the sandbox start path. These spans are a
 separate telemetry surface from the first-party events above. The generated
 telemetry contract does not cover them, so this section is their canonical
 contract.
 
-The spans are opt-in. Paperclip exports them only when an OTLP endpoint is
-configured. With no endpoint the whole span path is a no-op. Paperclip opens the
+The spans are opt-in. Zworker exports them only when an OTLP endpoint is
+configured. With no endpoint the whole span path is a no-op. Zworker opens the
 spans only for a run that targets a remote sandbox. A local run and an SSH run
 stay out of these spans.
 
@@ -78,7 +78,7 @@ value:
 - An image id, a sandbox id, and a lease id ride only as a non-reversible short
   hash.
 
-Each numeric attribute is finite. Paperclip omits an attribute when its value is
+Each numeric attribute is finite. Zworker omits an attribute when its value is
 absent, never a misleading `0`.
 
 ### Spans
@@ -90,12 +90,12 @@ absent, never a misleading `0`.
 | `codex-home.seed` | Managed-home seed step. | `sandbox.startup` |
 | `skills.reconcile` | Skills reconcile step. | `sandbox.startup` |
 | `stage.sync` | Workspace stage-sync step. | `sandbox.startup` |
-| `bridge.paperclip` | Paperclip bridge start step. | `sandbox.startup` |
+| `bridge.paperclip` | Zworker bridge start step. | `sandbox.startup` |
 | `bridge.process-session` | Process-session bridge start step. | `sandbox.startup` |
 | `acp.handshake` | ACP session handshake step. | `sandbox.startup` |
 | `sandbox.agentSession.sendInput` | One outbound ACP message to the agent — the socket handler's one `writeTextFile` exec. | the active run span |
 | `sandbox.agentSession.pollOutput` | One 100 ms poll tick — `list`, then `read`+`remove` per file found (`1 + 2n` execs). | the active run span |
-| `sandbox.callbackBridge.relayRequest` | One Paperclip-API callback request — read the request, write the response, remove it. | the active run span |
+| `sandbox.callbackBridge.relayRequest` | One Zworker-API callback request — read the request, write the response, remove it. | the active run span |
 | `sandbox.exec` | One host-to-sandbox execution. | the active step or wrapper span |
 
 A step span name is the step name. The `sandbox.exec` span parents to the step
@@ -153,7 +153,7 @@ per-execution `sandbox.exec` child spans carry that detail.
 
 ### `sandbox.exec` span attributes
 
-The `sandbox.exec` span uses this closed attribute allowlist. Paperclip omits a
+The `sandbox.exec` span uses this closed attribute allowlist. Zworker omits a
 numeric attribute when the provider does not report the value.
 
 | Attribute | Type | Optional | Meaning |
@@ -170,7 +170,7 @@ numeric attribute when the provider does not report the value.
 | `paperclip.sandbox.startup.outcome` | string | no | The execution outcome (`ok` or `failed`). |
 
 The plugin decides the cache hit at the sandbox-handle lookup. The span no
-longer infers a cache hit from `wait_before_ms == 0`. Paperclip omits the
+longer infers a cache hit from `wait_before_ms == 0`. Zworker omits the
 `cache_hit` attribute when the provider does not report the value.
 
 To add a span attribute, extend the `SANDBOX_STARTUP_SPAN_ATTRS` allowlist in
@@ -246,7 +246,7 @@ no-op.
 
 ## Sandbox Startup Run-Log Event
 
-Paperclip writes one `run.startup.step` event to the run log for each bring-up
+Zworker writes one `run.startup.step` event to the run log for each bring-up
 step. This event is a run-log record, not a first-party telemetry event. The
 generated telemetry contract does not cover it, so this section is its canonical
 contract.

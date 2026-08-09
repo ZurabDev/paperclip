@@ -26,7 +26,7 @@
       "defaults": {
         "templateKey": "paperclip.google-sheets"
       },
-      "guidanceMd": "Share each spreadsheet with the Paperclip robot email, then paste the sheet links.",
+      "guidanceMd": "Share each spreadsheet with the Zworker robot email, then paste the sheet links.",
       "riskTier": "S3",
       "requiredResourceFilters": [
         "spreadsheet"

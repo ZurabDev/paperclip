@@ -1930,7 +1930,7 @@ function IngestFilesModal({
             <h2 id="llm-wiki-ingest-modal-title" style={{ margin: 0, fontSize: 16, fontWeight: 650 }}>Ingest files into {targetSpace?.displayName ?? targetSpaceSlug}</h2>
             <Tiny style={{ marginTop: 4 }}>
               Review the staged files, switch the destination space if needed, then queue them as LLM
-              Wiki ingest operations. This is manual file ingest - Paperclip-derived distillation always
+              Wiki ingest operations. This is manual file ingest - Zworker-derived distillation always
               routes to the default space regardless of the destination picked here.
             </Tiny>
           </div>
@@ -2144,8 +2144,8 @@ function CreateSpaceModal({
             <h2 id="create-space-modal-title" style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>Create a shared space</h2>
             <Tiny style={{ marginTop: 4 }}>
               Spaces partition wiki pages, sources, and manual ingest into separate slug-prefixed folders
-              under the wiki root. Paperclip distillation and event capture always write into the
-              default space and skip new spaces created here - per-space Paperclip routing is a later
+              under the wiki root. Zworker distillation and event capture always write into the
+              default space and skip new spaces created here - per-space Zworker routing is a later
               phase.
             </Tiny>
           </div>
@@ -2209,7 +2209,7 @@ function CreateSpaceModal({
               />
             </div>
           </FormField>
-          <FormField label="Access scope" help="Access scope is metadata only. It does not currently enforce who can read or write the space, and it does not change which Paperclip sources reach the space.">
+          <FormField label="Access scope" help="Access scope is metadata only. It does not currently enforce who can read or write the space, and it does not change which Zworker sources reach the space.">
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 8 }}>
               <ScopeTile
                 selected={accessScope === "shared"}
@@ -2560,7 +2560,7 @@ export function WikiRouteSidebar({ context }: PluginRouteSidebarProps) {
         <div className="mb-1 flex items-center gap-1 px-2 text-[11px] font-semibold uppercase tracking-normal text-muted-foreground" style={{ height: 24 }}>
           <span
             className="flex-1 truncate"
-            title="Destination spaces. Browsing and manual ingest happen in the active space; Paperclip distillation always writes into the default space in Phase 1."
+            title="Destination spaces. Browsing and manual ingest happen in the active space; Zworker distillation always writes into the default space in Phase 1."
           >
             Shared Spaces
           </span>
@@ -3424,8 +3424,8 @@ function PageDetail({ context, path, spaceSlug }: { context: { companyId: string
                 resolveWikiLinkHref={resolveWikiLinkHref}
               />
               {displaySourceRefs.length > 0 ? (
-                <section aria-label="Paperclip source refs" style={{ marginTop: 16, display: "grid", gap: 6 }}>
-                  <Tiny style={{ fontWeight: 650 }}>Paperclip source refs</Tiny>
+                <section aria-label="Zworker source refs" style={{ marginTop: 16, display: "grid", gap: 6 }}>
+                  <Tiny style={{ fontWeight: 650 }}>Zworker source refs</Tiny>
                   <ul style={{ margin: 0, paddingLeft: 18, color: tokens.muted, fontSize: 12, lineHeight: 1.5 }}>
                     {displaySourceRefs.map((ref) => (
                       <li key={ref.id}>{ref.label}</li>
@@ -3661,7 +3661,7 @@ function FreshnessChip({ companyId, pagePath, companyPrefix }: { companyId: stri
       </span>
       {projectLink ? (
         <a href={projectLink} style={{ marginLeft: 8, color: "inherit", textDecoration: "underline" }}>
-          Open Paperclip for live state →
+          Open Zworker for live state →
         </a>
       ) : null}
     </FreshnessChipShell>
@@ -4712,7 +4712,7 @@ function aggregateLintFindings(findings: Record<string, unknown>[]): { total: nu
 }
 
 // ---------------------------------------------------------------------------
-// History tab: native Paperclip issue table for recent LLM Wiki operation
+// History tab: native Zworker issue table for recent LLM Wiki operation
 // issues. Each plugin run is represented by an issue, so the standard issue
 // history view is the right surface here.
 // ---------------------------------------------------------------------------
@@ -4806,7 +4806,7 @@ const MANAGED_SKILL_LABELS: Record<string, string> = {
   "wiki-ingest": "Wiki Ingest",
   "wiki-query": "Wiki Query",
   "wiki-lint": "Wiki Lint",
-  "paperclip-distill": "Paperclip Distill",
+  "paperclip-distill": "Zworker Distill",
   "index-refresh": "Index Refresh",
 };
 
@@ -5014,11 +5014,11 @@ const SETTINGS_SECTIONS: ReadonlyArray<{
   description: string;
 }> = [
   { key: "root", label: "Setup", description: "" },
-  { key: "spaces", label: "Spaces", description: "Destination spaces - folders, slugs, and folder health. Per-space Paperclip indexing is not configurable yet." },
-  { key: "distillation", label: "Distillation", description: "Paperclip -> default space. Cursors, caps, and routines for the company-wide distillation pipeline." },
+  { key: "spaces", label: "Spaces", description: "Destination spaces - folders, slugs, and folder health. Per-space Zworker indexing is not configurable yet." },
+  { key: "distillation", label: "Distillation", description: "Zworker -> default space. Cursors, caps, and routines for the company-wide distillation pipeline." },
   { key: "routines", label: "Managed Routines", description: "Scheduled wiki maintenance." },
   { key: "lint", label: "Lint", description: "Run checks and review wiki health findings." },
-  { key: "events", label: "Ingestion Settings", description: "Paperclip event capture into the default space (issues, comments, documents)." },
+  { key: "events", label: "Ingestion Settings", description: "Zworker event capture into the default space (issues, comments, documents)." },
 ];
 
 function SettingsSectionButton({
@@ -5540,14 +5540,14 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
               <div>
                 <h3 style={{ margin: 0, fontSize: 17, fontWeight: 650 }}>Distillation is off</h3>
                 <Tiny style={{ marginTop: 6, fontSize: 13, color: tokens.fg, lineHeight: 1.55, maxWidth: 540 }}>
-                  When enabled, the Wiki Maintainer reads Paperclip issues, comments, and documents for this
+                  When enabled, the Wiki Maintainer reads Zworker issues, comments, and documents for this
                   company and keeps <Mono>wiki/projects/&lt;slug&gt;/standup.md</Mono> plus <Mono>wiki/projects/&lt;slug&gt;/index.md</Mono> pages in the
                   <strong> default wiki space</strong>. Pages stay marked stale until a cursor window succeeds -
                   they never imply live state.
                 </Tiny>
                 <Tiny style={{ marginTop: 6, fontSize: 13, color: tokens.fg, lineHeight: 1.55, maxWidth: 540 }}>
-                  Other spaces do not receive Paperclip-derived pages yet. They stay on manual and raw-file
-                  ingest until per-space Paperclip ingestion profiles ship.
+                  Other spaces do not receive Zworker-derived pages yet. They stay on manual and raw-file
+                  ingest until per-space Zworker ingestion profiles ship.
                 </Tiny>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -5622,7 +5622,7 @@ function DistillationSettingsPanel({ context, settings }: { context: { companyId
               <CheckboxRow label="Root issues marked distillable" defaultChecked />
               <CheckboxRow label="All company issues" help="May create large source windows." />
               <Tiny>
-                These filters narrow the Paperclip source scope. The destination is always the default
+                These filters narrow the Zworker source scope. The destination is always the default
                 wiki space in Phase 1.
               </Tiny>
               <Tiny>Plugin-operation issues are always excluded to prevent feedback loops.</Tiny>
@@ -6309,7 +6309,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
                   ) : null}
                   {showMaintainerWarning ? (
                     <Callout tone="warn">
-                      This is not the Paperclip-provided Wiki Maintainer. Plugin operations and routines may miss the recommended wiki role, tools, and default instructions.
+                      This is not the Zworker-provided Wiki Maintainer. Plugin operations and routines may miss the recommended wiki role, tools, and default instructions.
                     </Callout>
                   ) : null}
                   {agentDefaultDrift?.changedFiles.length ? (
@@ -6476,7 +6476,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
           <SettingsPanel
             title="Distillation"
             badge={<Badge tone="default">Default space only</Badge>}
-            description="Read Paperclip issues, comments, and documents for this company and write project pages into the default wiki space. Assets/attachments and work products stay metadata-only in Phase 5 and are excluded from source-text extraction. Other spaces cannot be selected as a destination yet - that lands with per-space Paperclip ingestion profiles."
+            description="Read Zworker issues, comments, and documents for this company and write project pages into the default wiki space. Assets/attachments and work products stay metadata-only in Phase 5 and are excluded from source-text extraction. Other spaces cannot be selected as a destination yet - that lands with per-space Zworker ingestion profiles."
           >
             <DistillationSettingsPanel context={context} settings={data} />
           </SettingsPanel>
@@ -6533,12 +6533,12 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
           <SpacesSettingsPanel context={context} description={activeSettingsConfig.description} />
         ) : activeSettingsSection === "events" ? (
           <SettingsPanel
-            title="Paperclip event ingestion"
+            title="Zworker event ingestion"
             badge={<Badge tone={currentEventPolicy.enabled ? "running" : "default"}>{currentEventPolicy.enabled ? "enabled" : "off by default"}</Badge>}
             description={activeSettingsConfig.description}
           >
           <Tiny style={{ marginBottom: 10 }}>
-            Company-scoped Paperclip events can advance default-space cursors. Enable only the first-party text sources this wiki should observe for default-space distillation.
+            Company-scoped Zworker events can advance default-space cursors. Enable only the first-party text sources this wiki should observe for default-space distillation.
           </Tiny>
           <div style={{ display: "grid", gap: 10 }}>
             <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
@@ -6582,7 +6582,7 @@ function SettingsBody({ context, initialSection = "root" }: { context: { company
               />
             </div>
             <Callout tone="warn">
-              Event ingestion records selected Paperclip issue, comment, and document activity for the default wiki space. Assets/attachments and work products are excluded here: Phase 5 allows metadata-only references later, not blob reads or linked-content fetches. It never reads across companies or creates non-default space cursors.
+              Event ingestion records selected Zworker issue, comment, and document activity for the default wiki space. Assets/attachments and work products are excluded here: Phase 5 allows metadata-only references later, not blob reads or linked-content fetches. It never reads across companies or creates non-default space cursors.
             </Callout>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <Button size="sm" variant="primary" onClick={saveEventPolicy} loading={eventPolicyBusy}>Save controls</Button>
@@ -6867,7 +6867,7 @@ function SpaceEditCard({
             <Tiny>
               Access scope is stored as metadata only. <Mono>shared</Mono>, <Mono>team</Mono>, and{" "}
               <Mono>personal</Mono> are saved on the space record but do not currently enforce
-              read/write permissions, and they do not change which Paperclip sources reach this space.
+              read/write permissions, and they do not change which Zworker sources reach this space.
             </Tiny>
             <FormField label="Owner user id">
               <TextInput value={(settingsRecord.ownerUserHint as string | undefined) ?? space.ownerUserId ?? ""} disabled style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }} />
@@ -6963,7 +6963,7 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
     setBusy(true);
     try {
       await updateProfile({ companyId, spaceSlug: space.slug, profile: draft });
-      toast({ tone: "success", title: "Paperclip ingestion profile saved", body: `${space.displayName} will use the selected Paperclip sources.` });
+      toast({ tone: "success", title: "Zworker ingestion profile saved", body: `${space.displayName} will use the selected Zworker sources.` });
       profileQuery.refresh();
       refresh();
     } catch (err) {
@@ -6976,21 +6976,21 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
   return (
     <Card>
       <CardHeader
-        title={<span>Paperclip → {space.displayName}</span>}
+        title={<span>Zworker → {space.displayName}</span>}
         right={<Badge tone={badge.tone} style={{ fontSize: 10 }}>{badge.label}</Badge>}
       />
       <CardBody>
         <div style={{ display: "grid", gap: 12 }}>
-          {profileQuery.loading && !data ? <Tiny>Loading Paperclip ingestion profile…</Tiny> : null}
+          {profileQuery.loading && !data ? <Tiny>Loading Zworker ingestion profile…</Tiny> : null}
           {profileQuery.error ? <Callout tone="danger">{profileQuery.error.message}</Callout> : null}
           {locked ? (
             <Callout tone="warn">
-              Locked — host permissions pending. Paperclip ingestion stays disabled on team and personal spaces until LLM Wiki enforces read/write permissions for non-shared spaces.
+              Locked — host permissions pending. Zworker ingestion stays disabled on team and personal spaces until LLM Wiki enforces read/write permissions for non-shared spaces.
             </Callout>
           ) : null}
           {data && data.historicalPageCount > 0 && data.effectiveState === "disabled" ? (
             <Callout>
-              Off · {data.historicalPageCount} historical Paperclip page{data.historicalPageCount === 1 ? "" : "s"} still in this space. Disabling stops new observations but does not delete prior wiki pages.
+              Off · {data.historicalPageCount} historical Zworker page{data.historicalPageCount === 1 ? "" : "s"} still in this space. Disabling stops new observations but does not delete prior wiki pages.
             </Callout>
           ) : null}
           {data && data.overlapCount > 0 ? (
@@ -7014,8 +7014,8 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
                   })}
                 />
                 <span>
-                  Enable Paperclip ingestion for this destination space
-                  <Tiny style={{ display: "block" }}>Future Paperclip issue, comment, and document events can advance cursors in {space.displayName}. Existing pages are preserved when this is turned off.</Tiny>
+                  Enable Zworker ingestion for this destination space
+                  <Tiny style={{ display: "block" }}>Future Zworker issue, comment, and document events can advance cursors in {space.displayName}. Existing pages are preserved when this is turned off.</Tiny>
                 </span>
               </label>
               <div style={{ display: "grid", gap: 8 }}>
@@ -7057,7 +7057,7 @@ function PaperclipIngestionSpaceCard({ companyId, space, refresh }: { companyId:
                 </Tiny>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Button size="sm" variant="primary" onClick={save} loading={busy} disabled={!canSave || emptyScopes}>Save Paperclip profile</Button>
+                <Button size="sm" variant="primary" onClick={save} loading={busy} disabled={!canSave || emptyScopes}>Save Zworker profile</Button>
                 <Button size="sm" variant="ghost" onClick={() => setDraft(data?.profile ?? null)} disabled={busy}>Revert</Button>
               </div>
             </>

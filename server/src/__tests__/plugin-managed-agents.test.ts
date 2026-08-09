@@ -48,7 +48,7 @@ function manifest(): PaperclipPluginManifestV1 {
     version: "0.1.0",
     displayName: "Managed Agents Test",
     description: "Test plugin",
-    author: "Paperclip",
+    author: "Zworker",
     categories: ["automation"],
     capabilities: ["agents.managed"],
     entrypoints: { worker: "./dist/worker.js" },
@@ -106,7 +106,7 @@ describeEmbeddedPostgres("plugin-managed agents", () => {
     const pluginManifest = options.manifest ?? manifest();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Zworker",
       issuePrefix: issuePrefix(companyId),
       requireBoardApprovalForNewAgents: options.requireApproval ?? false,
     });

@@ -467,7 +467,7 @@ export async function resolveCloudTenantActor(db: Db, req: Request): Promise<Exp
     .values({
       id: companyId,
       name: companyName,
-      description: `Provisioned by Paperclip Cloud for stack ${stackId}.`,
+      description: `Provisioned by Zworker Cloud for stack ${stackId}.`,
       status: "active",
       issuePrefix: issuePrefixForCloudStack(stackId),
       updatedAt: now,
@@ -620,7 +620,7 @@ export function isKnownBadCloudCompanyName(
   const normalized = name.trim();
   return (
     /^paperclip-stack-.+/i.test(normalized) ||
-    /^stack-.+\s+paperclip$/i.test(normalized) ||
+    /^stack-.+\s+(?:paperclip|zworker)$/i.test(normalized) ||
     normalized === ids.companyId ||
     (ids.paperclipCompanyId !== undefined &&
       normalized === ids.paperclipCompanyId)

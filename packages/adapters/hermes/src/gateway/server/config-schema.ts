@@ -17,7 +17,7 @@ export function getConfigSchema(): AdapterConfigSchema {
         label: "API key",
         type: "text",
         required: true,
-        hint: "Hermes API_SERVER_KEY, not PAPERCLIP_API_KEY. Stored as a Paperclip secret reference.",
+        hint: "Hermes API_SERVER_KEY, not PAPERCLIP_API_KEY. Stored as a Zworker secret reference.",
         meta: { secret: true },
       },
       {
@@ -55,9 +55,9 @@ export function getConfigSchema(): AdapterConfigSchema {
       },
       {
         key: "paperclipApiUrl",
-        label: "Paperclip API URL",
+        label: "Zworker API URL",
         type: "text",
-        hint: "Optional Paperclip API URL reachable by the remote Hermes host. This is not a credential.",
+        hint: "Optional Zworker API URL reachable by the remote Hermes host. This is not a credential.",
       },
       {
         key: "headers",

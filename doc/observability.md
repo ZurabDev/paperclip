@@ -1,6 +1,6 @@
 # Observability
 
-Paperclip ships with **opt-in** OpenTelemetry auto-instrumentation for the
+Zworker ships with **opt-in** OpenTelemetry auto-instrumentation for the
 server process. When activated it produces **traces only** — no metrics and no
 logs are exported by this integration. The OTel packages are *optional peer
 dependencies*: they are not in the default lockfile and are loaded dynamically
@@ -60,7 +60,7 @@ export OTEL_SERVICE_NAME="paperclip"
 export OTEL_SERVICE_VERSION="2026.5.0"
 ```
 
-If `OTEL_EXPORTER_OTLP_PROTOCOL` is set to an unrecognized value, Paperclip
+If `OTEL_EXPORTER_OTLP_PROTOCOL` is set to an unrecognized value, Zworker
 logs a single warning and falls back to gRPC.
 
 If `OTEL_EXPORTER_OTLP_ENDPOINT` is set but the OTel packages are not

@@ -1,12 +1,12 @@
 # `@paperclipai/plugin-novita-sandbox`
 
-Published Novita Agent Sandbox provider plugin for Paperclip.
+Published Novita Agent Sandbox provider plugin for Zworker.
 
-This package lives in the Paperclip monorepo, but it is intentionally excluded from the root `pnpm` workspace and shaped to publish and install like a standalone npm package. That means operators can install it from the Plugins page by package name, and the host will fetch its transitive dependencies at install time without adding lockfile churn to the Paperclip repo.
+This package lives in the Zworker monorepo, but it is intentionally excluded from the root `pnpm` workspace and shaped to publish and install like a standalone npm package. That means operators can install it from the Plugins page by package name, and the host will fetch its transitive dependencies at install time without adding lockfile churn to the Zworker repo.
 
 ## Install
 
-From a Paperclip instance, install:
+From a Zworker instance, install:
 
 ```text
 @paperclipai/plugin-novita-sandbox
@@ -19,7 +19,7 @@ The host plugin installer runs `npm install` into the managed plugin directory, 
 Configure Novita from `Instance Settings -> Environments`, not from the plugin's plugin page.
 
 - Put the Novita API key on the sandbox environment itself.
-- When you save an environment, Paperclip stores pasted API keys as company secrets.
+- When you save an environment, Zworker stores pasted API keys as company secrets.
 - `NOVITA_API_KEY` remains an optional host-level fallback when an environment omits the key.
 
 ## Local development

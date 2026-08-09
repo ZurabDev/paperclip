@@ -5,7 +5,7 @@ import {
 } from "@paperclipai/shared";
 
 describe("access validators", () => {
-  it("accepts HTTP(S) and Paperclip asset image URLs", () => {
+  it("accepts HTTP(S) and Zworker asset image URLs", () => {
     expect(updateCurrentUserProfileSchema.safeParse({
       name: "Ada Lovelace",
       image: "https://example.com/avatar.png",

@@ -2,7 +2,7 @@
 
 This playbook is the repeatable template for adding a vendor to the Apps catalog as data, not as a plugin. It follows the accepted connections framework in [PAP-13211](/PAP/issues/PAP-13211), the first-30 rollout matrix in [PAP-2432](/PAP/issues/PAP-2432), and the production validation scope in [PAP-12373](/PAP/issues/PAP-12373).
 
-Use it when Paperclip acts on an external system through a governed connection: a stored credential, a capability catalog, access profiles and policy rules, and audit. Inbound integrations, such as an external client acting on Paperclip, use gateway or webhook guidance instead.
+Use it when Zworker acts on an external system through a governed connection: a stored credential, a capability catalog, access profiles and policy rules, and audit. Inbound integrations, such as an external client acting on Zworker, use gateway or webhook guidance instead.
 
 Every connector built with this playbook is a **plane P2** connection — a resource token in the instance vault, acquired via the connect broker, never a sign-in authenticator. Before writing a connector, read [Identity vs. connections](./README.md#identity-vs-connections) for the P1/P2/P3 boundary and the D7 standing rule (sign-in tokens are never reused as resource tokens; id.paperclip.ing never stores resource tokens; no connections hub on the ID service).
 
@@ -40,8 +40,8 @@ Classify the vendor before writing metadata. Use the [PAP-2432](/PAP/issues/PAP-
 
 | Reuse path | Use when | Typical transport | Examples from the matrix |
 | --- | --- | --- | --- |
-| MCP-direct | The vendor exposes an official or stable MCP server whose tools map cleanly to Paperclip grants. | `mcp_remote`; `local_stdio` only for approved trusted templates. | Linear, Notion, Sentry, Vercel, Exa, Apify, Context7. |
-| OpenAPI-shim | The vendor has a documented REST/OpenAPI surface but no stable MCP server, and a generated/thin shim can expose safe actions. | Shim service or approved template that presents an MCP-compatible catalog to Paperclip. | Datadog, Apollo, QuickBooks, Ramp/Brex, Zendesk. |
+| MCP-direct | The vendor exposes an official or stable MCP server whose tools map cleanly to Zworker grants. | `mcp_remote`; `local_stdio` only for approved trusted templates. | Linear, Notion, Sentry, Vercel, Exa, Apify, Context7. |
+| OpenAPI-shim | The vendor has a documented REST/OpenAPI surface but no stable MCP server, and a generated/thin shim can expose safe actions. | Shim service or approved template that presents an MCP-compatible catalog to Zworker. | Datadog, Apollo, QuickBooks, Ramp/Brex, Zendesk. |
 | Vendor-deep-wrapper | The vendor boundary depends on app-installation tokens, event validation, rich domain semantics, resource grants, or high-risk writes. | Vendor-specific wrapper behind the same connection model. | GitHub, Slack, Google Workspace writes, Atlassian, Microsoft 365, Cloudflare, Figma, Stripe, Salesforce, HubSpot, Intercom, PagerDuty. |
 
 Record the classification in the proposal along with the transport and the reason a lighter path is or is not enough.
@@ -50,7 +50,7 @@ Record the classification in the proposal along with the transport and the reaso
 
 Choose one auth mode:
 
-- OAuth: user or workspace authorization through Paperclip-owned OAuth app registration. Use for vendors with delegated scopes and revocation APIs.
+- OAuth: user or workspace authorization through Zworker-owned OAuth app registration. Use for vendors with delegated scopes and revocation APIs.
 - API key: operator-supplied token or key. Use only when scopes can be constrained and the key is stored as a `company_secrets` ref.
 - App-installation: bot/app token, GitHub App installation, Slack bot token, or similar installation credential.
 - None: public/read-only systems or first-party fixtures that do not require vendor credentials.
@@ -78,7 +78,7 @@ Credentials always live in `company_secrets` with redacted metadata and versione
 }
 ```
 
-Do not add durable vendor credentials to agent env, project env, runtime env, adapter config, issue comments, screenshots, logs, fixture JSON, or plugin config. Agents receive a run-scoped gateway token; Paperclip resolves the vendor credential server-side and audits the call.
+Do not add durable vendor credentials to agent env, project env, runtime env, adapter config, issue comments, screenshots, logs, fixture JSON, or plugin config. Agents receive a run-scoped gateway token; Zworker resolves the vendor credential server-side and audits the call.
 
 ## Step 4: Author The AppDefinition
 
@@ -114,7 +114,7 @@ The connection health and catalog discovery steps should fail or warn when requi
 
 ## Step 6: Define The Action Catalog
 
-List each initial action before implementation. Do not rely on vendor tool names alone; Paperclip needs normalized metadata for review, policy, and audit.
+List each initial action before implementation. Do not rely on vendor tool names alone; Zworker needs normalized metadata for review, policy, and audit.
 
 For each action, capture:
 
@@ -167,7 +167,7 @@ Recommended defaults for a new catalog entry:
 - Set `recommendedDefaults.askFirstRiskLevels` to `["write", "destructive"]` unless the connector is read-only.
 - Add an explicit block or quarantine for destructive actions until SecurityEngineer review.
 - Add rate-limit policy for search/fetch APIs, vendor quota-sensitive APIs, and paid APIs.
-- Require approval for any external send, deploy, refund, delete, tenant-wide mutation, or action that can expose private customer data outside Paperclip.
+- Require approval for any external send, deploy, refund, delete, tenant-wide mutation, or action that can expose private customer data outside Zworker.
 
 ## Step 9: Align With Production Validation
 
@@ -232,7 +232,7 @@ supports public clients (`token_endpoint_auth_method: "none"` plus PKCE S256)
 need **no pre-provisioned OAuth app at all**. At first connect the broker
 registers a client on the fly and stores it on the connection:
 
-- Registration request: `client_name` `Paperclip (<instance host>)`,
+- Registration request: `client_name` `Zworker (<instance host>)`,
   `redirect_uris` = the instance's own callback, `grant_types`
   `["authorization_code", "refresh_token"]`, `response_types` `["code"]`,
   `token_endpoint_auth_method` `"none"`.
@@ -247,7 +247,7 @@ registers a client on the fly and stores it on the connection:
   `customer` and `dcr` in the method's `ownershipModes` when the vendor
   supports both.
 
-**DCR needs neither Paperclip ID nor Paperclip Connect.** DCR is always
+**DCR needs neither Zworker ID nor Zworker Connect.** DCR is always
 instance-local (ratified in the PAP-14828 connector-service spec, section 10
 item 8.4: "DCR is always instance-local; the service has no DCR involvement").
 Each instance registers its own public client with the vendor and uses its own
@@ -278,13 +278,13 @@ axes; a private HTTPS host can be fine even when plain HTTP is not.
 Every connection doc — playbook appendix, proposal, or user-facing doc —
 must include all three of the following (they are part of the template below):
 
-1. **Service involvement statement.** Say explicitly whether Paperclip ID or
-   Paperclip Connect participates in the flow. For RFC 7591 DCR providers the
+1. **Service involvement statement.** Say explicitly whether Zworker ID or
+   Zworker Connect participates in the flow. For RFC 7591 DCR providers the
    answer is always: neither — DCR is instance-local and cloud vs self-hosted
    use the same path.
 2. **Sequence diagram + exact endpoints.** A sequence diagram of how the
    connection works, and the exact paths/endpoints used for auth: authorize,
-   token, registration (if DCR), and the Paperclip callback. Keep mermaid
+   token, registration (if DCR), and the Zworker callback. Keep mermaid
    sources next to the doc; do not put semicolons inside mermaid message text
    (they parse as statement separators).
 3. **Administrator setup instructions.** Step-by-step: what (if anything) an
@@ -324,9 +324,9 @@ Copy this section into a connector proposal or implementation issue.
   - Token:
   - Registration (if DCR):
   - Discovery (.well-known), if any:
-  - Paperclip callback: `/api/tools/oauth/callback` (or n/a)
+  - Zworker callback: `/api/tools/oauth/callback` (or n/a)
 - Redirect constraints (probed): none / https-or-loopback-http / requires-public-redirect
-- Paperclip ID / Paperclip Connect involvement: <"none — DCR is instance-local; cloud and self-hosted use the same path" for RFC 7591 providers; otherwise name the role>
+- Zworker ID / Zworker Connect involvement: <"none — DCR is instance-local; cloud and self-hosted use the same path" for RFC 7591 providers; otherwise name the role>
 
 ## Administrator Setup (mandatory)
 
@@ -461,9 +461,9 @@ No destructive Linear action should ship in the first pass. If a future delete/a
 
 1. Operator opens Apps and selects Linear.
 2. Operator clicks Connect and completes Linear OAuth.
-3. Paperclip stores OAuth material in `company_secrets` and shows redacted workspace/account metadata.
+3. Zworker stores OAuth material in `company_secrets` and shows redacted workspace/account metadata.
 4. Operator selects workspace/team/project filters and confirms default ask-first writes.
-5. Paperclip runs health check and catalog refresh.
+5. Zworker runs health check and catalog refresh.
 6. Operator binds the Linear read profile to a company, project, agent, routine, or issue scope.
 7. Write actions stay ask-first until the operator approves calls or creates narrow trust rules.
 
@@ -479,7 +479,7 @@ No destructive Linear action should ship in the first pass. If a future delete/a
 
 Linear's real-vendor evidence belongs in [PAP-12373](/PAP/issues/PAP-12373). The smoke pass should prove:
 
-- OAuth connect succeeds with Paperclip-owned Linear app registration once [PAP-12372](/PAP/issues/PAP-12372) provides credentials.
+- OAuth connect succeeds with Zworker-owned Linear app registration once [PAP-12372](/PAP/issues/PAP-12372) provides credentials.
 - Catalog discovery returns the expected Linear issue actions.
 - A read call against an allowed team succeeds.
 - `linear.create_issue` opens ask-first review and only executes after approval.
@@ -503,7 +503,7 @@ alone.
 - App key: `notion`
 - App name: Notion
 - First-30 classification: MCP-direct. Notion ships an official hosted MCP
-  server; its ~20 `notion-*` tools map directly to Paperclip grants.
+  server; its ~20 `notion-*` tools map directly to Zworker grants.
 - Reason for classification: no shim or wrapper needed — the hosted server
   speaks Streamable HTTP, which `server/src/services/mcp-http.ts` already
   handles. The FIRST-30 matrix's "thin wrapper for block/database policy" is
@@ -541,7 +541,7 @@ alone.
 
 ### Connection Flow (mandatory)
 
-Paperclip ID / Paperclip Connect involvement: **none — DCR is instance-local**
+Zworker ID / Zworker Connect involvement: **none — DCR is instance-local**
 (PAP-14828 spec section 10 item 8.4); **cloud-hosted and self-hosted use the
 same path**. The only per-instance difference is the hostname in the redirect
 URI.
@@ -556,9 +556,9 @@ Auth endpoints (exact paths, from the live discovery chain):
 | Authorize | `https://mcp.notion.com/authorize` |
 | Token (exchange + refresh) | `https://mcp.notion.com/token` |
 | Registration (RFC 7591 DCR) | `https://mcp.notion.com/register` |
-| Paperclip connect (wizard) | `POST /api/companies/:companyId/tools/apps/connect` |
-| Paperclip OAuth start | `POST /api/tools/oauth/:connectionId/start` |
-| Paperclip callback | `GET /api/tools/oauth/callback` |
+| Zworker connect (wizard) | `POST /api/companies/:companyId/tools/apps/connect` |
+| Zworker OAuth start | `POST /api/tools/oauth/:connectionId/start` |
+| Zworker callback | `GET /api/tools/oauth/callback` |
 
 Redirect constraints (probed): `https-or-loopback-http`.
 
@@ -566,8 +566,8 @@ Redirect constraints (probed): `https-or-loopback-http`.
 sequenceDiagram
     autonumber
     actor U as User's browser
-    participant UI as Paperclip UI<br/>/PAP/apps/connect?source=notion
-    participant S as Paperclip instance server<br/>(cloud or self-hosted — same path)
+    participant UI as Zworker UI<br/>/PAP/apps/connect?source=notion
+    participant S as Zworker instance server<br/>(cloud or self-hosted — same path)
     participant M as mcp.notion.com<br/>(MCP server + OAuth AS)
     participant N as Notion web<br/>(app.notion.com, notion.com)
 
@@ -632,7 +632,7 @@ plain-HTTP non-loopback origins.
 - What the admin must register: **nothing**. Notion's authorization server
   supports RFC 7591 DCR, so the instance registers its own public client on
   first connect. No Notion integration, no client credentials, no callback
-  registration, no Paperclip ID or Paperclip Connect involvement.
+  registration, no Zworker ID or Zworker Connect involvement.
 - Optional escape hatch: to use a pre-registered classic Notion integration
   instead, set `PAPERCLIP_TOOL_OAUTH_NOTION_CLIENT_ID` and
   `PAPERCLIP_TOOL_OAUTH_NOTION_CLIENT_SECRET`; the env client always takes
@@ -712,10 +712,10 @@ delete/archive/bulk action starts quarantined pending SecurityEngineer review.
    browser to `auth.startUrl`.
 2. Operator completes Notion consent (workspace picker → approve).
 3. Notion redirects to the instance's own `GET /api/tools/oauth/callback`;
-   Paperclip exchanges the code, stores token material in `company_secrets`,
+   Zworker exchanges the code, stores token material in `company_secrets`,
    and returns the operator to the wizard (`?oauth=connected`).
 4. Operator confirms resource filters and default ask-first writes.
-5. Paperclip runs health check and catalog refresh; `notion-*` tools appear
+5. Zworker runs health check and catalog refresh; `notion-*` tools appear
    on the actions step.
 6. Write actions stay ask-first until the operator approves calls or creates
    narrow trust rules.

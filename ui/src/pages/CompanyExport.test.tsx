@@ -45,7 +45,7 @@ vi.mock("../context/BreadcrumbContext", () => ({
 vi.mock("../context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Zworker" },
   }),
   useOptionalCompany: () => null,
 }));
@@ -89,12 +89,12 @@ function buildExportPreviewResult() {
       issues: [],
       envInputs: [],
       includes: { company: true, agents: true, projects: true, issues: true, skills: false },
-      company: { name: "Paperclip", description: null },
+      company: { name: "Zworker", description: null },
       schemaVersion: 1,
       generatedAt: "2026-01-01T00:00:00.000Z",
       source: null,
     },
-    files: { "README.md": "# Paperclip\n" },
+    files: { "README.md": "# Zworker\n" },
     fileInventory: [],
     counts: { files: 1, agents: 0, skills: 0, projects: 0, issues: 0 },
     warnings: [],
@@ -117,7 +117,7 @@ function buildRichExportPreviewResult() {
   return {
     ...base,
     files: {
-      "README.md": "# Paperclip\n",
+      "README.md": "# Zworker\n",
       ".paperclip.yaml": "schema: paperclip/v1\n",
       "agents/ceo/AGENT.md": "# CEO\n",
       "tasks/one-off/TASK.md": "# One-off\n",

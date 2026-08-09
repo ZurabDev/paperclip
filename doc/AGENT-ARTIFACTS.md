@@ -1,11 +1,11 @@
 # Agent Artifact Upload Workflow
 
 Generated files that a board user or reviewer should inspect as deliverables
-must be attached to the Paperclip issue before the agent chooses a final
+must be attached to the Zworker issue before the agent chooses a final
 disposition. A local workspace path is not enough, because cloud users and
 reviewers often cannot access the agent's disk.
 
-Use the helper bundled with the Paperclip skill from the repo root:
+Use the helper bundled with the Zworker skill from the repo root:
 
 ```sh
 skills/paperclip/scripts/paperclip-upload-artifact.sh path/to/output.webm \
@@ -13,7 +13,7 @@ skills/paperclip/scripts/paperclip-upload-artifact.sh path/to/output.webm \
   --summary "Rendered walkthrough for review"
 ```
 
-The helper uses the authenticated Paperclip API from the current heartbeat
+The helper uses the authenticated Zworker API from the current heartbeat
 environment:
 
 - `PAPERCLIP_API_URL`
@@ -61,10 +61,10 @@ Expected work product metadata shape:
 `column` are optional. `relativePath` must be relative to that workspace root;
 do not store host-local absolute paths as workspace references.
 
-Workspace file links resolve only inside registered Paperclip workspaces. The
+Workspace file links resolve only inside registered Zworker workspaces. The
 default target is the current issue's execution workspace first, then its
 project workspace. A link may target another same-company project workspace only
-when it carries both that `projectId` and `workspaceId`. Paperclip does not
+when it carries both that `projectId` and `workspaceId`. Zworker does not
 resolve arbitrary machine-wide filesystem paths, absolute host paths, home
 paths, or relative paths that escape the selected workspace.
 

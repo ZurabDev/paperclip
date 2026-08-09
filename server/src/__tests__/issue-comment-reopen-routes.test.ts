@@ -1037,7 +1037,7 @@ describe.sequential("issue comment reopen routes", () => {
       authorType: "user",
       authorAgentId: null,
       authorUserId: "local-board",
-      body: "Paperclip needs a disposition before this issue can continue.",
+      body: "Zworker needs a disposition before this issue can continue.",
       presentation: { kind: "system_notice", tone: "warning", detailsDefaultOpen: false },
       metadata: {
         version: 1,
@@ -1056,7 +1056,7 @@ describe.sequential("issue comment reopen routes", () => {
     const res = await request(app)
       .post("/api/issues/11111111-1111-4111-8111-111111111111/comments")
       .send({
-        body: "Paperclip needs a disposition before this issue can continue.",
+        body: "Zworker needs a disposition before this issue can continue.",
         presentation,
         metadata,
       });
@@ -1064,7 +1064,7 @@ describe.sequential("issue comment reopen routes", () => {
     expect(res.status).toBe(201);
     expect(mockIssueService.addComment).toHaveBeenCalledWith(
       "11111111-1111-4111-8111-111111111111",
-      "Paperclip needs a disposition before this issue can continue.",
+      "Zworker needs a disposition before this issue can continue.",
       { agentId: undefined, userId: "local-board", runId: null, onBehalfOfUserId: undefined },
       {
         authorType: "user",

@@ -184,7 +184,7 @@ function isThinkingLine(line: string): boolean {
  * Parse a single line of Hermes stdout into transcript entries.
  *
  * Emits structured tool_call/tool_result pairs (with synthetic IDs) so
- * Paperclip renders proper tool cards with status icons and expand/collapse.
+ * Zworker renders proper tool cards with status icons and expand/collapse.
  *
  * @param line  Raw stdout line from Hermes CLI
  * @param ts    ISO timestamp for the entry
@@ -211,7 +211,7 @@ export function parseHermesStdoutLine(
 
   // ── MCP / server init noise reclassified from stderr by wrappedOnLog ──
   // Pattern: [2026-03-25T10:40:53.941Z] INFO: ...
-  // Emit as stderr so Paperclip groups them into the amber accordion.
+  // Emit as stderr so Zworker groups them into the amber accordion.
   if (/^\[\d{4}-\d{2}-\d{2}T/.test(trimmed)) {
     return [{ kind: "stderr", ts, text: trimmed }];
   }

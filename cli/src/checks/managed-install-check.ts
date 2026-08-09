@@ -40,7 +40,7 @@ export function nodeRuntimeCheck(): CheckResult {
         name: "Node.js runtime",
         status: "fail",
         message: `Node.js ${process.versions.node} is unsupported`,
-        repairHint: "Install Node.js 20 or newer before installing or running Paperclip",
+        repairHint: "Install Node.js 20 or newer before installing or running Zworker",
       };
 }
 

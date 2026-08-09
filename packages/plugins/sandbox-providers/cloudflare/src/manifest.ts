@@ -10,7 +10,7 @@ const manifest: PaperclipPluginManifestV1 = {
   displayName: "Cloudflare Sandbox Provider",
   description:
     "First-party sandbox provider plugin that provisions Cloudflare sandboxes through an operator-deployed Worker bridge.",
-  author: "Paperclip",
+  author: "Zworker",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: {
@@ -22,7 +22,7 @@ const manifest: PaperclipPluginManifestV1 = {
       kind: "sandbox_provider",
       displayName: "Cloudflare Sandbox",
       description:
-        "Runs Paperclip sandbox environments through a Cloudflare Worker bridge backed by the Sandbox SDK and Durable Objects.",
+        "Runs Zworker sandbox environments through a Cloudflare Worker bridge backed by the Sandbox SDK and Durable Objects.",
       configSchema: {
         type: "object",
         properties: {

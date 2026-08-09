@@ -362,7 +362,7 @@ export function InviteLandingPage() {
         name: name.trim(),
         email: email.trim(),
         password,
-      });
+      }, token);
     },
     onSuccess: async () => {
       setAuthFeedback(null);

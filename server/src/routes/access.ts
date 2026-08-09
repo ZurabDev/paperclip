@@ -49,6 +49,7 @@ import {
 } from "@paperclipai/shared";
 import type { DeploymentExposure, DeploymentMode, HumanCompanyMembershipRole, PermissionKey } from "@paperclipai/shared";
 import {
+  HttpError,
   forbidden,
   conflict,
   notFound,
@@ -89,6 +90,10 @@ import {
 import { claimFirstInstanceAdmin } from "../first-admin-claim.js";
 import { getStorageService } from "../storage/index.js";
 import { secretService } from "../services/secrets.js";
+import {
+  createCompanyInviteEmailService,
+  type CompanyInviteEmailService,
+} from "../services/company-invite-email.js";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -2604,12 +2609,15 @@ export function accessRoutes(
     allowedHostnames: string[];
     inviteResolutionNetwork?: Partial<InviteResolutionNetwork>;
     inviteRateLimiter?: InviteRateLimiter;
+    inviteEmailService?: CompanyInviteEmailService;
   }
 ) {
   const router = Router();
   const access = accessService(db);
   const boardAuth = boardAuthService(db);
   const agents = agentService(db);
+  const inviteEmailService =
+    opts.inviteEmailService ?? createCompanyInviteEmailService();
   const routeInviteResolutionNetwork = opts.inviteResolutionNetwork
     ? { ...defaultInviteResolutionNetwork, ...opts.inviteResolutionNetwork }
     : inviteResolutionNetwork;
@@ -3028,6 +3036,7 @@ export function accessRoutes(
     req: Request;
     companyId: string;
     allowedJoinTypes: "human" | "agent" | "both";
+    inviteeEmail?: string | null;
     humanRole?: "owner" | "admin" | "operator" | "viewer" | null;
     defaultsPayload?: Record<string, unknown> | null;
     agentMessage?: string | null;
@@ -3044,6 +3053,7 @@ export function accessRoutes(
       companyId: input.companyId,
       inviteType: "company_join" as const,
       allowedJoinTypes: input.allowedJoinTypes,
+      inviteeEmail: input.inviteeEmail?.trim().toLowerCase() || null,
       defaultsPayload: mergeInviteDefaults(
         input.defaultsPayload ?? null,
         normalizedAgentMessage,
@@ -3284,15 +3294,87 @@ export function accessRoutes(
     async (req, res) => {
       const companyId = req.params.companyId as string;
       await assertCompanyPermission(req, companyId, "users:invite");
+      const inviteeEmail = req.body.inviteeEmail?.trim().toLowerCase() || null;
+      if (inviteeEmail && req.body.allowedJoinTypes !== "human") {
+        throw badRequest("inviteeEmail is only supported for human invitations");
+      }
+      if (
+        opts.deploymentMode === "authenticated" &&
+        req.body.allowedJoinTypes === "human" &&
+        !inviteeEmail
+      ) {
+        throw badRequest("inviteeEmail is required for human invitations");
+      }
       const { token, created, normalizedAgentMessage } =
         await createCompanyInviteForCompany({
           req,
           companyId,
           allowedJoinTypes: req.body.allowedJoinTypes,
+          inviteeEmail,
           humanRole: req.body.humanRole ?? null,
           defaultsPayload: req.body.defaultsPayload ?? null,
           agentMessage: req.body.agentMessage ?? null
         });
+
+      const companyBranding = await getInviteCompanyBranding(created.companyId, token);
+      const inviteSummary = toInviteSummaryResponse(
+        req,
+        token,
+        created,
+        companyBranding
+      );
+      let emailDelivery: {
+        provider: "smtp" | "resend";
+        deliveredAt: Date;
+        messageId: string | null;
+      } | null = null;
+
+      if (inviteeEmail) {
+        try {
+          const inviterName = created.invitedByUserId
+            ? await loadUsersById(db, [created.invitedByUserId]).then(
+                (users) => users.get(created.invitedByUserId!)?.name ?? null,
+              )
+            : null;
+          const delivery = await inviteEmailService.sendCompanyInvite({
+            to: inviteeEmail,
+            inviterName,
+            companyName: companyBranding.name ?? "your company",
+            inviteUrl: inviteSummary.inviteUrl,
+            expiresAt: created.expiresAt,
+            idempotencyKey: `paperclip-invite-${created.id}`,
+          });
+          const deliveredAt = new Date();
+          await db
+            .update(invites)
+            .set({
+              emailDeliveredAt: deliveredAt,
+              emailProvider: delivery.provider,
+              emailMessageId: delivery.messageId,
+              updatedAt: deliveredAt,
+            })
+            .where(eq(invites.id, created.id));
+          emailDelivery = {
+            provider: delivery.provider,
+            deliveredAt,
+            messageId: delivery.messageId,
+          };
+        } catch (err) {
+          const revokedAt = new Date();
+          await db
+            .update(invites)
+            .set({ revokedAt, updatedAt: revokedAt })
+            .where(eq(invites.id, created.id));
+          logger.warn(
+            { err, inviteId: created.id, companyId, inviteeEmail },
+            "company invitation email delivery failed; invite revoked",
+          );
+          throw new HttpError(
+            502,
+            "Invitation email could not be delivered. The invite was revoked; retry safely.",
+          );
+        }
+      }
 
       await logActivity(db, {
         companyId,
@@ -3309,17 +3391,11 @@ export function accessRoutes(
           allowedJoinTypes: created.allowedJoinTypes,
           expiresAt: created.expiresAt.toISOString(),
           humanRole: extractInviteHumanRole(created),
-          hasAgentMessage: Boolean(normalizedAgentMessage)
+          hasAgentMessage: Boolean(normalizedAgentMessage),
+          emailDelivered: Boolean(emailDelivery),
         }
       });
 
-      const companyBranding = await getInviteCompanyBranding(created.companyId, token);
-      const inviteSummary = toInviteSummaryResponse(
-        req,
-        token,
-        created,
-        companyBranding
-      );
       res.status(201).json({
         ...created,
         token,
@@ -3328,7 +3404,11 @@ export function accessRoutes(
         companyName: companyBranding.name,
         onboardingTextPath: inviteSummary.onboardingTextPath,
         onboardingTextUrl: inviteSummary.onboardingTextUrl,
-        inviteMessage: inviteSummary.inviteMessage
+        inviteMessage: inviteSummary.inviteMessage,
+        inviteeEmail,
+        emailDeliveredAt: emailDelivery?.deliveredAt ?? null,
+        emailProvider: emailDelivery?.provider ?? null,
+        emailMessageId: emailDelivery?.messageId ?? null,
       });
     }
   );
@@ -3710,6 +3790,13 @@ export function accessRoutes(
 
       const actorEmail =
         requestType === "human" ? await resolveActorEmail(db, req) : null;
+      if (
+        requestType === "human" &&
+        invite.inviteeEmail &&
+        actorEmail?.trim().toLowerCase() !== invite.inviteeEmail.trim().toLowerCase()
+      ) {
+        throw forbidden("This invitation was sent to a different email address");
+      }
       const actorRequestingUserId =
         requestType === "human"
           ? req.actor.userId ?? "local-board"

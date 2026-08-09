@@ -122,6 +122,27 @@ describeEmbeddedPostgres("plugin access and authorization host services", () => 
     services.dispose();
   });
 
+  it("blocks untargeted human invites from plugins in authenticated deployments", async () => {
+    const company = await createCompany(db, "PAI");
+    const services = buildHostServices(
+      db,
+      pluginId,
+      "permissions-extension",
+      createEventBusStub(),
+      undefined,
+      { deploymentMode: "authenticated" },
+    );
+
+    await expect(
+      services.access.createInvite({
+        companyId: company.id,
+        allowedJoinTypes: "human",
+      }),
+    ).rejects.toThrow("targeted human invitations through the access API");
+
+    services.dispose();
+  });
+
   it("filters authorization audit entries by allow or deny decision details", async () => {
     const company = await createCompany(db, "PAU");
     const services = buildHostServices(db, pluginId, "permissions-extension", createEventBusStub());

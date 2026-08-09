@@ -97,6 +97,10 @@ type CompanyInviteCreated = {
   expiresAt: string;
   allowedJoinTypes: "human" | "agent" | "both";
   humanRole?: HumanCompanyRole | null;
+  inviteeEmail?: string | null;
+  emailDeliveredAt?: string | null;
+  emailProvider?: "smtp" | "resend" | null;
+  emailMessageId?: string | null;
   companyName?: string | null;
   onboardingTextPath?: string;
   onboardingTextUrl?: string;
@@ -163,6 +167,10 @@ export type CompanyInviteRecord = {
   companyName: string | null;
   inviteType: "company_join" | "bootstrap_ceo";
   allowedJoinTypes: "human" | "agent" | "both";
+  inviteeEmail: string | null;
+  emailDeliveredAt: string | null;
+  emailProvider: "smtp" | "resend" | null;
+  emailMessageId: string | null;
   humanRole: HumanCompanyRole | null;
   defaultsPayload: Record<string, unknown> | null;
   expiresAt: string;
@@ -265,6 +273,7 @@ export const accessApi = {
     companyId: string,
     input: {
       allowedJoinTypes?: "human" | "agent" | "both";
+      inviteeEmail?: string | null;
       humanRole?: HumanCompanyRole | null;
       defaultsPayload?: Record<string, unknown> | null;
       agentMessage?: string | null;

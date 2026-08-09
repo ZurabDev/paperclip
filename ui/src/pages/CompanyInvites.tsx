@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, ExternalLink, MailPlus } from "lucide-react";
+import { MailPlus } from "lucide-react";
 import { accessApi } from "@/api/access";
 import { ApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { useCompany } from "@/context/CompanyContext";
 import { useToast } from "@/context/ToastContext";
 import { Link } from "@/lib/router";
 import { queryKeys } from "@/lib/queryKeys";
-import { copyTextToClipboard } from "@/lib/clipboard";
 import { Badge } from "@/components/ui/badge";
 
 const inviteRoleOptions = [
@@ -52,41 +51,8 @@ export function CompanyInvites() {
   const { pushToast } = useToast();
   const queryClient = useQueryClient();
   const [humanRole, setHumanRole] = useState<"owner" | "admin" | "operator" | "viewer">("operator");
-  const [latestInviteUrl, setLatestInviteUrl] = useState<string | null>(null);
-  const [latestInviteCopied, setLatestInviteCopied] = useState(false);
-  const latestInviteInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (!latestInviteCopied) return;
-    const timeout = window.setTimeout(() => {
-      setLatestInviteCopied(false);
-    }, 1600);
-    return () => window.clearTimeout(timeout);
-  }, [latestInviteCopied]);
-
-  function selectLatestInviteUrl() {
-    latestInviteInputRef.current?.focus();
-    latestInviteInputRef.current?.select();
-  }
-
-  async function copyText(text: string, unavailableBody: string, afterFallback?: () => void) {
-    try {
-      await copyTextToClipboard(text);
-      return true;
-    } catch {
-      afterFallback?.();
-    }
-    pushToast({
-      title: "Clipboard unavailable",
-      body: unavailableBody,
-      tone: "warn",
-    });
-    return false;
-  }
-
-  async function copyInviteUrl(url: string) {
-    return copyText(url, "The invite URL is selected. Copy it manually from the field.", selectLatestInviteUrl);
-  }
+  const [inviteeEmail, setInviteeEmail] = useState("");
+  const [latestDelivery, setLatestDelivery] = useState<string | null>(null);
 
   useEffect(() => {
     setBreadcrumbs([
@@ -120,18 +86,18 @@ export function CompanyInvites() {
     mutationFn: () =>
       accessApi.createCompanyInvite(selectedCompanyId!, {
         allowedJoinTypes: "human",
+        inviteeEmail,
         humanRole,
         agentMessage: null,
       }),
     onSuccess: async (invite) => {
-      setLatestInviteUrl(invite.inviteUrl);
-      setLatestInviteCopied(false);
-      const copied = await copyText(invite.inviteUrl, "Copy the invite URL manually from the field below.");
+      setLatestDelivery(invite.inviteeEmail ?? inviteeEmail);
+      setInviteeEmail("");
 
       await queryClient.invalidateQueries({ queryKey: inviteHistoryQueryKey });
       pushToast({
-        title: "Invite created",
-        body: copied ? "Invite ready below and copied to clipboard." : "Invite ready below.",
+        title: "Invitation sent",
+        body: `The email provider accepted the invitation for ${invite.inviteeEmail ?? inviteeEmail}.`,
         tone: "success",
       });
     },
@@ -185,7 +151,7 @@ export function CompanyInvites() {
           <h1 className="text-lg font-semibold">Company Invites</h1>
         </div>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Invite people to request access to this company. New invite links are copied to your clipboard when they are generated.
+          Invite people by email. Paperclip creates a single-use link and sends it automatically.
         </p>
       </div>
 
@@ -193,9 +159,23 @@ export function CompanyInvites() {
         <div className="space-y-1">
           <h2 className="text-sm font-semibold">Invite a person</h2>
           <p className="text-sm text-muted-foreground">
-            Generate a human invite link and choose the default access it should request.
+            Enter the recipient and choose the access they receive after sign-in.
           </p>
         </div>
+
+        <label className="block max-w-xl space-y-2">
+          <span className="text-sm font-medium">Email address</span>
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            value={inviteeEmail}
+            onChange={(event) => setInviteeEmail(event.currentTarget.value)}
+            placeholder="person@example.com"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring"
+            aria-label="Invitee email address"
+          />
+        </label>
 
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium">Choose a role</legend>
@@ -234,64 +214,22 @@ export function CompanyInvites() {
         </fieldset>
 
         <div className="rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground">
-          Each invite link is single-use. Human invitees get the selected role immediately after sign-in; agent invites still create a join request for approval.
+          Each emailed link is single-use and bound to the recipient&apos;s account email. Human invitees get the selected role immediately after sign-in.
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={() => createInviteMutation.mutate()} disabled={createInviteMutation.isPending}>
-            {createInviteMutation.isPending ? "Creating…" : "Create invite"}
+          <Button
+            onClick={() => createInviteMutation.mutate()}
+            disabled={createInviteMutation.isPending || !inviteeEmail.trim()}
+          >
+            {createInviteMutation.isPending ? "Sending…" : "Send invitation"}
           </Button>
           <span className="text-sm text-muted-foreground">Invite history below keeps the audit trail.</span>
         </div>
 
-        {latestInviteUrl ? (
-          <div className="space-y-3 rounded-lg border border-border px-4 py-4">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-medium">Latest invite link</div>
-                {latestInviteCopied ? (
-                  <div className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
-                    <Check className="h-3.5 w-3.5" />
-                    Copied
-                  </div>
-                ) : null}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                This URL includes the current Paperclip domain returned by the server.
-              </div>
-            </div>
-            <label className="block space-y-1">
-              <span className="sr-only">Latest invite URL</span>
-              <input
-                ref={latestInviteInputRef}
-                readOnly
-                value={latestInviteUrl}
-                onFocus={(event) => event.currentTarget.select()}
-                onClick={(event) => event.currentTarget.select()}
-                className="w-full rounded-md border border-border bg-muted/60 px-3 py-2 text-sm text-foreground outline-none transition-colors selection:bg-primary selection:text-primary-foreground focus:border-ring"
-                aria-label="Latest invite URL"
-              />
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={async () => {
-                  const copied = await copyInviteUrl(latestInviteUrl);
-                  setLatestInviteCopied(copied);
-                }}
-              >
-                <Copy className="h-4 w-4" />
-                Copy link
-              </Button>
-              <Button size="sm" variant="outline" asChild>
-                <a href={latestInviteUrl} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-4 w-4" />
-                  Open invite
-                </a>
-              </Button>
-            </div>
+        {latestDelivery ? (
+          <div className="rounded-lg border border-border px-4 py-3 text-sm text-foreground">
+            Invitation sent to <span className="font-medium">{latestDelivery}</span>.
           </div>
         ) : null}
       </section>
@@ -397,7 +335,10 @@ function formatInviteState(state: "active" | "accepted" | "expired" | "revoked")
 }
 
 function formatInviteAudience(invite: Awaited<ReturnType<typeof accessApi.listInvites>>["invites"][number]) {
-  if (invite.allowedJoinTypes === "agent") return "Agent";
-  if (invite.allowedJoinTypes === "both") return invite.humanRole ? `Human or agent · ${invite.humanRole}` : "Human or agent";
-  return invite.humanRole ?? "Human";
+  const audience = invite.allowedJoinTypes === "agent"
+    ? "Agent"
+    : invite.allowedJoinTypes === "both"
+      ? invite.humanRole ? `Human or agent · ${invite.humanRole}` : "Human or agent"
+      : invite.humanRole ?? "Human";
+  return invite.inviteeEmail ? `${invite.inviteeEmail} · ${audience}` : audience;
 }

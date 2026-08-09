@@ -94,6 +94,7 @@ import { createCachedViteHtmlRenderer } from "./vite-html-renderer.js";
 import { DEFAULT_JSON_BODY_LIMIT, PORTABLE_JSON_BODY_LIMIT } from "./http/body-limits.js";
 import { COMPANY_IMPORT_API_PATH } from "./routes/company-import-paths.js";
 import { apiCompression } from "./middleware/api-compression.js";
+import { inviteOnlySignUpGuard } from "./middleware/invite-signup-guard.js";
 
 type UiMode = "none" | "static" | "vite-dev";
 const FEEDBACK_EXPORT_FLUSH_INTERVAL_MS = 5_000;
@@ -254,6 +255,7 @@ export async function createApp(
     allowedHostnames: string[];
     bindHost: string;
     authReady: boolean;
+    authDisableSignUp?: boolean;
     companyDeletionEnabled: boolean;
     instanceId?: string;
     hostVersion?: string;
@@ -317,6 +319,10 @@ export async function createApp(
     }),
   );
   app.use("/api/auth", authRoutes(db));
+  app.post(
+    "/api/auth/sign-up/email",
+    inviteOnlySignUpGuard(db, { enabled: opts.authDisableSignUp ?? false }),
+  );
   if (opts.betterAuthHandler) {
     app.all("/api/auth/{*authPath}", opts.betterAuthHandler);
   }
@@ -495,6 +501,7 @@ export async function createApp(
         const services = buildHostServices(db, pluginId, manifest.id, eventBus, notifyWorker, {
           pluginWorkerManager: workerManager,
           manifest,
+          deploymentMode: opts.deploymentMode,
         });
         hostServicesDisposers.set(pluginId, () => services.dispose());
         return createHostClientHandlers({

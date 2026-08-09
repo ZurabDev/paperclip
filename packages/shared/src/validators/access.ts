@@ -11,6 +11,7 @@ import { optionalAgentAdapterTypeSchema } from "../adapter-type.js";
 
 export const createCompanyInviteSchema = z.object({
   allowedJoinTypes: z.enum(INVITE_JOIN_TYPES).default("both"),
+  inviteeEmail: z.string().trim().email().max(320).optional().nullable(),
   humanRole: z.enum(HUMAN_COMPANY_MEMBERSHIP_ROLES).optional().nullable(),
   defaultsPayload: z.record(z.string(), z.unknown()).optional().nullable(),
   agentMessage: z.string().max(4000).optional().nullable(),

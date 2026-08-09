@@ -88,6 +88,12 @@ The database URL is stored separately in `zworkers-db`. Never rotate the encrypt
 key without decrypting/re-encrypting stored secrets. Never print or commit secret values.
 The Resend API key is stored in `zworkers-email` and mounted only into the application container.
 
+## Branding
+
+The temporary ZWorkers mark is stored at `doc/assets/zworkers-logo.png`. Upload it through the
+company logo endpoint when a tenant has no final corporate asset. Company branding remains
+tenant-scoped, so Abdullah and PP can replace it independently without another application image.
+
 ## Migrations, backup, and recovery
 
 The deployment sets `PAPERCLIP_MIGRATION_AUTO_APPLY=true`; startup refuses stale or incompatible

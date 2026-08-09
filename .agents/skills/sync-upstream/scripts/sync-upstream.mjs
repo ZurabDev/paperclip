@@ -24,7 +24,9 @@ export function executable(name, platform = process.platform) {
 
 export function parseArguments(argv) {
   const dryRun = argv.includes("--dry-run");
-  const command = argv.find((item) => !item.startsWith("-")) ?? "status";
+  const command = argv.includes("--help")
+    ? "help"
+    : (argv.find((item) => !item.startsWith("-")) ?? "status");
   return { command, dryRun };
 }
 
@@ -115,7 +117,7 @@ function verify(dryRun) {
 
 export function main(argv = process.argv.slice(2)) {
   const { command, dryRun } = parseArguments(argv);
-  if (command === "help" || command === "--help") {
+  if (command === "help") {
     console.log("Usage: sync-upstream.mjs [status|merge|verify|all] [--dry-run]");
     return;
   }

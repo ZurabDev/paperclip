@@ -17,4 +17,5 @@ test("selects the Windows pnpm shim only on Windows", () => {
 test("parses command and dry-run independently", () => {
   assert.deepEqual(parseArguments(["merge", "--dry-run"]), { command: "merge", dryRun: true });
   assert.deepEqual(parseArguments([]), { command: "status", dryRun: false });
+  assert.deepEqual(parseArguments(["--help"]), { command: "help", dryRun: false });
 });

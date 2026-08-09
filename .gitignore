@@ -50,7 +50,14 @@ diagnostics/
 .paperclip-local/
 .paperclip-runtime/
 /.idea/
-/.agents/
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/sync-upstream/
+!/.agents/skills/sync-upstream/**
+!/.agents/skills/deploy-cnt/
+!/.agents/skills/deploy-cnt/**
+/graphify-out/
 
 # Doc maintenance cursor
 .doc-review-cursor

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy CNT"
+  short_description: "Release Paperclip to the CNT Kubernetes cluster"
+  default_prompt: "Use $deploy-cnt to verify, publish, deploy, and smoke-test Paperclip on CNT."

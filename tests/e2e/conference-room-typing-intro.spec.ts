@@ -88,7 +88,7 @@ async function runOnboardingWizard(page: Page, companyName: string) {
   await page.getByRole("button", { name: /^Next/ }).click();
 
   // Step 4: adapter (claude_local default); heartbeat is intercepted.
-  await page.getByRole("button", { name: /Give it a heartbeat/ }).click();
+  await page.getByRole("button", { name: /^Connect$/ }).click();
 
   // Step 5: review → Get started creates the first task and opens its
   // detail page.

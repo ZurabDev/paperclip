@@ -91,7 +91,7 @@ then the `/paperclip` PVC, then the exact prior image and the unchanged applicat
 kubectl -n zworkers rollout status deploy/zworkers --timeout=10m
 kubectl -n zworkers get pods,svc,ingress,pvc,cronjob
 kubectl -n zworkers exec deploy/zworkers -- node -e "fetch('http://127.0.0.1:3100/api/health').then(r=>{if(!r.ok)process.exit(1);return r.text()}).then(console.log)"
-curl --resolve zworkers.cnt.me:443:212.41.1.179 https://zworkers.cnt.me/api/health
+curl --resolve zworkers.cnt.me:443:212.41.1.178 https://zworkers.cnt.me/api/health
 ```
 
 The `--resolve` smoke test works before public DNS exists. After DNS is added, repeat without it

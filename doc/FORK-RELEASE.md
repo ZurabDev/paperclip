@@ -3,8 +3,10 @@
 ## Artifact model
 
 Pushes to `ZurabDev/paperclip` `master` publish the production Docker target to
-`ghcr.io/zurabdev/paperclip`. The fork must not publish upstream npm packages: every job in
-`.github/workflows/release.yml` is guarded to run only in `paperclipai/paperclip`.
+`ghcr.io/zurabdev/paperclip`. The fork must not publish upstream npm packages. The `Release`
+workflow is administratively disabled in `ZurabDev/paperclip`; keep its upstream source unchanged
+so upstream workflow contract tests continue to pass. Verify `gh workflow list --all` reports it
+as `disabled_manually` after every fork recreation.
 
 Deploy immutable `sha-<short-sha>` tags. Optional human release tags use
 `vYYYY.DDD.PATCH-cnt.N`; the Docker workflow also publishes the corresponding semver tag. Never

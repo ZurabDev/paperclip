@@ -186,3 +186,31 @@ A change is done when all are true:
 ## Design system
 
 `DESIGN.md` at the repo root is the source of truth for UI design decisions. The token-only rule applies to all `ui/` changes: every color, spacing, radius, type, shadow, and motion value in `ui/src/components/**` and `ui/src/pages/**` comes from the token layer in `ui/src/index.css` — no hex, raw px, arbitrary Tailwind bracket values, or raw `font-size`/`fontSize` declarations in components, outside the documented allowlist in `ui/src/index.css`. Run `pnpm check:token-gates` (`scripts/check-token-gates.mjs`) before committing UI changes — it fails on any violation not covered by that allowlist.
+
+## CNT private-fork operations
+
+This checkout is the `ZurabDev/paperclip` fork. The production target is one authenticated,
+publicly exposed Kubernetes deployment at `https://zworkers.cnt.me`. One deployment serves
+many companies; never create a deployment per company unless a documented regulatory or
+infrastructure boundary explicitly requires it. Preserve company isolation through the
+existing `company_id` model and access checks.
+
+Read these before operating the fork:
+
+1. `doc/CNT-SELF-HOSTING.md` — topology, auth, storage, backups, invitations, and recovery.
+2. `doc/UPSTREAM-SYNC.md` — safe upstream merge and conflict policy.
+3. `doc/FORK-RELEASE.md` — image publication and CNT release procedure.
+
+Repository remotes are fixed: `origin` is `ZurabDev/paperclip`; `upstream` is
+`paperclipai/paperclip`. Use the `sync-upstream` skill for upstream work and the `deploy-cnt`
+skill for production releases. The Kubernetes source of truth lives in the sibling private
+repository `../connect-ai/k8s/zworkers`; do not add live credentials to this repository.
+
+The current product does not send transactional email. Email/password authentication is local,
+email verification is disabled, and company invitations are one-time high-entropy URLs returned
+to an authorized operator for manual delivery. Do not add an SMTP dependency to deployment
+configuration unless application support for a mail transport is implemented and tested first.
+
+Fork release order is mandatory: targeted tests, full typecheck/test/build, commit, push,
+immutable GHCR image, Helm render, `nelm release install`, rollout, `/api/health`, then an
+authenticated browser smoke test. Never deploy `latest`; deploy `sha-<short-sha>` or a fork tag.

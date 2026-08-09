@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync Upstream"
+  short_description: "Safely merge upstream Paperclip on every supported OS"
+  default_prompt: "Use $sync-upstream to inspect, merge, verify, and publish an upstream Paperclip update."

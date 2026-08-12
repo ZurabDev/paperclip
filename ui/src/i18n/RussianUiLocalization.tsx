@@ -105,7 +105,7 @@ export function translateRussianUiText(source: string) {
       [/^Updated (.+)$/, (when) => `Обновлено ${translateRussianUiText(when)}`],
       [/^(\d+) running, (\d+) paused, (\d+) errors?$/, (running, paused, errors) => `${running} выполняется, ${paused} приостановлено, ${errors} с ошибкой`],
       [/^(\d+) open, (\d+) blocked$/, (open, blocked) => `${open} открыто, ${blocked} заблокировано`],
-      [/^(\d+) blockers? need attention$/, (count) => `требуют внимания: ${count}`],
+      [/^(\d+) blockers? needs? attention$/, (count) => `требуют внимания: ${count}`],
       [/^(\d+)m ago$/, (count) => `${count} мин. назад`],
       [/^(\d+)h ago$/, (count) => `${count} ч. назад`],
       [/^(\d+)d ago$/, (count) => `${count} дн. назад`],

@@ -35,18 +35,20 @@ describe("RussianUiLocalization", () => {
     expect(translateRussianUiText("running")).toBe("выполняются");
     expect(translateRussianUiText("updated 4mo ago")).toBe("обновлено 4 мес. назад");
     expect(translateRussianUiText("4 artifacts")).toBe("артефактов: 4");
+    expect(translateRussianUiText("1 blocker needs attention")).toBe("требуют внимания: 1");
+    expect(translateRussianUiText("2 blockers need attention")).toBe("требуют внимания: 2");
   });
 
   it("localizes visible text and accessibility attributes", () => {
     const root = document.createElement("section");
-    root.innerHTML = '<button aria-label="Dashboard" title="New Task">Loading…</button>';
+    root.innerHTML = '<button aria-label="Switch to dark mode" title="Switch to light mode">Loading…</button>';
 
     localizeRussianUiTree(root);
 
     const button = root.querySelector("button")!;
     expect(button.textContent).toBe("Загрузка…");
-    expect(button.getAttribute("aria-label")).toBe("Панель управления");
-    expect(button.getAttribute("title")).toBe("Новая задача");
+    expect(button.getAttribute("aria-label")).toBe("Переключиться на тёмную тему");
+    expect(button.getAttribute("title")).toBe("Переключиться на светлую тему");
   });
 
   it("localizes textarea placeholders without changing editable content", () => {
@@ -101,6 +103,10 @@ describe("RussianUiLocalization", () => {
     expect(catalog.Routines).toBe("Сценарии");
     expect(catalog.Watchdog).toBe("Контролёр");
     expect(catalog.Assignee).toBe("Исполнитель");
+    expect(catalog.Email).toBe("Электронная почта");
+    expect(catalog["Create one"]).toBe("Создать аккаунт");
+    expect(catalog["Switch to dark mode"]).toBe("Переключиться на тёмную тему");
+    expect(catalog["Switch to light mode"]).toBe("Переключиться на светлую тему");
   });
 
   it("does not contain known machine-translation failures", () => {

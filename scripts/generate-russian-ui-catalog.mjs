@@ -117,6 +117,7 @@ const technicalSources = new Set([
   "Codex CLI",
   "CSS",
   "ctx (",
+  "Dotta",
   "EnvInputsList",
   "Esc",
   "HTML",
@@ -265,11 +266,16 @@ function isCopyBearingCallArgument(node) {
 }
 
 function isCopyBearingVariable(node, sourceFile) {
-  const parent = node.parent;
-  if (!ts.isVariableDeclaration(parent) || parent.initializer !== node || !ts.isIdentifier(parent.name)) return false;
-  return /(?:Label|Title|Description|Message|Text|Copy|Hint|Placeholder|Tooltip|Summary)$/.test(
-    parent.name.text,
-  );
+  let current = node.parent;
+  for (let depth = 0; current && depth < 6; depth += 1, current = current.parent) {
+    if (ts.isVariableDeclaration(current) && ts.isIdentifier(current.name)) {
+      return /(?:^|_)(?:label|title|description|message|text|copy|hint|placeholder|tooltip|summary)$/i.test(
+        current.name.text,
+      ) || /(?:Label|Title|Description|Message|Text|Copy|Hint|Placeholder|Tooltip|Summary)$/.test(current.name.text);
+    }
+    if (ts.isVariableStatement(current) || ts.isStatement(current)) return false;
+  }
+  return false;
 }
 
 function isCopyBearingParameterDefault(node) {

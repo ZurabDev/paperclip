@@ -4,9 +4,10 @@
  * Extract operator-facing English copy from the React UI and build the checked-in
  * Russian fallback catalog used by the CNT Zworker fork.
  *
- * Translation is intentionally a maintainer command, never a build step. It uses
- * Google's public translate endpoint in bounded batches, preserves reviewed
- * entries by default, and applies the product vocabulary overrides below.
+ * Translation is intentionally a manual maintainer responsibility. This script
+ * never calls a translation service: it extracts source copy, preserves reviewed
+ * entries, applies the product vocabulary overrides below, and reports every new
+ * English fallback that still needs a human-authored Russian translation.
  */
 
 import { readFile, readdir, writeFile } from "node:fs/promises";
@@ -17,13 +18,13 @@ import ts from "typescript";
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const uiRoot = path.join(repoRoot, "ui", "src");
 const catalogPath = path.join(uiRoot, "i18n", "ru-ui.json");
-const separator = "<<<ZWORKER_TRANSLATION_SEPARATOR>>>";
-const shouldTranslate = process.argv.includes("--translate");
 const checkOnly = process.argv.includes("--check");
 
 const translatableAttributes = new Set([
   "alt",
+  "aria-description",
   "aria-label",
+  "aria-placeholder",
   "label",
   "placeholder",
   "title",
@@ -72,6 +73,10 @@ const productOverrides = {
   Search: "Поиск",
   Loading: "Загрузка",
   "Loading…": "Загрузка…",
+  "macOS (Finder)": "macOS (Finder)",
+  "<empty>": "<пусто>",
+  "<timestamp>": "<timestamp>",
+  "Authorization: Bearer <token>": "Authorization: Bearer <token>",
   Save: "Сохранить",
   Cancel: "Отмена",
   Delete: "Удалить",
@@ -97,7 +102,85 @@ const productOverrides = {
   Costs: "Расходы",
   General: "Общие",
   Experimental: "Экспериментальные",
+  The: "Все",
 };
+
+const technicalSources = new Set([
+  "API",
+  "API ·",
+  "(deny_missing_membership)",
+  "(RESPONSIBLE_USER_UNAUTHORIZED)",
+  "(RESPONSIBLE_USER_UNAVAILABLE)",
+  "08 10px 20px)",
+  "CloudAccessGate",
+  "Codex",
+  "Codex CLI",
+  "CSS",
+  "ctx (",
+  "EnvInputsList",
+  "Esc",
+  "HTML",
+  "HTTP",
+  "JSON",
+  "LG",
+  "macOS",
+  "Markdown",
+  "MiB",
+  "MiB.",
+  "IssueChatUserMessage",
+  "IssueReferencePill",
+  'modelProfile: "cheap"',
+  "originHash",
+  "PDF",
+  "SKILL.md",
+  "SQL",
+  "SSH",
+  "XML",
+  "zip)",
+  "Zworker",
+  "Zworker v",
+]);
+
+function isTechnicalSource(value) {
+  if (technicalSources.has(value)) return true;
+  if (/^<\/?[A-Z][A-Za-z0-9]*(?:\s+[^<>]*)?\s*\/?>$/.test(value)) return true;
+  if (/^(?:[A-Z][A-Z0-9]*_){1,}[A-Z0-9]+$/.test(value)) return true;
+  if (/^[A-Z][a-z0-9]+(?:[A-Z][A-Za-z0-9]*)+$/.test(value)) return true;
+  if (/^(?:--|-\w+\s|\?|#|~\/|\.?\.\/)/.test(value)) return true;
+  if (/^\{[\s\S]*\}$/.test(value) || /^\{\{[^}]+\}\}$/.test(value)) return true;
+  if (/^(?:bash|cd|npm|npx|pnpm|yarn)\s/.test(value)) return true;
+  if (/^(?:await|const|if|let|return|router\.)\b/.test(value)) return true;
+  if (/(?:===|!==|=>)/.test(value)) return true;
+  if (/^[A-Za-z_$][\w$]*\(/.test(value)) return true;
+  if (/\b(?:req\.body|res\.status|var\(--|calc\(var\(|presentation\.kind)\b/.test(value)) return true;
+  if (/^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+$/.test(value)) return true;
+  if (/^[a-z]+[A-Z][A-Za-z0-9]*$/.test(value)) return true;
+  if (/^\[\d{2}:\d{2}:\d{2}\]\s+(?:INFO|WARN|ERROR|SYS)\b/.test(value)) return true;
+  if (/\{\{\s*[A-Za-z0-9_.]+\s*\}\}/.test(value)) return true;
+  if (/\b(?:&&|\basync\s*\(|\.tsx?:?\b|\.md\b|\.json\b)/.test(value) && /[(){};`]/.test(value)) return true;
+  if (/^(?:url\(#|(?:repeating-)?linear-gradient\(|color-mix\(|\)?\s*scale\()/.test(value)) return true;
+  if (/^(?:\d+(?:\.\d+)?(?:px|rem|%)?[,)]|px\s+\d|\)\s+(?:constraints|shows)\b)/.test(value)) return true;
+
+  const tokens = value.split(/\s+/);
+  const tailwindTokens = tokens.filter((token) =>
+    /^(?:(?:[a-z-]+):)*!?(?:-?[a-z]+(?:-[A-Za-z0-9_./%*:\[\]()-]+)+|absolute|block|flex|grid|hidden|inline|relative|uppercase)$/.test(
+      token,
+    ),
+  );
+  if (tokens.length >= 2 && tailwindTokens.length === tokens.length) return true;
+  if (
+    /^(?:bg|border|font|leading|line-clamp|max-[hw]|min-[hw]|p[trblxy]?|ring|rounded|shadow|space-[xy]|text|tracking|[wh])-[A-Za-z0-9_./%*\[\]():-]+$/.test(
+      value,
+    )
+  ) {
+    return true;
+  }
+
+  const utilityTokens = value.match(
+    /(?:^|\s)(?:-?[a-z]+:)*(?:absolute|border|dark|duration|ease|flex|gap|grid|group|h|hover|inline|items|max|min|ml|mr|mx|no-underline|opacity|p|px|py|relative|rounded|shadow|shrink|sm|text|transition|w)(?:-|:|\s|$)/g,
+  );
+  return (utilityTokens?.length ?? 0) >= 2;
+}
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -121,6 +204,38 @@ function propertyName(node, sourceFile) {
   return node.getText(sourceFile).replace(/^['"]|['"]$/g, "");
 }
 
+const htmlEntities = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  hellip: "…",
+  ldquo: "“",
+  lsquo: "‘",
+  lt: "<",
+  middot: "·",
+  nbsp: "\u00a0",
+  quot: '"',
+  rdquo: "”",
+  rarr: "→",
+  rsaquo: "›",
+  rsquo: "’",
+  times: "×",
+};
+
+function decodeHtmlEntities(value) {
+  return value.replace(/&(#(?:x[0-9a-f]+|\d+)|[a-z]+);/gi, (entity, name) => {
+    if (name.startsWith("#x") || name.startsWith("#X")) {
+      return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
+    }
+    if (name.startsWith("#")) return String.fromCodePoint(Number.parseInt(name.slice(1), 10));
+    return htmlEntities[name.toLowerCase()] ?? entity;
+  });
+}
+
+function normalizeCopy(value) {
+  return decodeHtmlEntities(value).replace(/\s+/g, " ").trim();
+}
+
 function isWithinJsx(node) {
   let current = node.parent;
   for (let depth = 0; current && depth < 6; depth += 1, current = current.parent) {
@@ -128,6 +243,18 @@ function isWithinJsx(node) {
     if (ts.isCallExpression(current) || ts.isVariableStatement(current) || ts.isReturnStatement(current)) break;
   }
   return false;
+}
+
+function jsxAttributeAncestor(node, sourceFile) {
+  let current = node.parent;
+  while (current) {
+    if (ts.isJsxAttribute(current)) return propertyName(current.name, sourceFile);
+    if (ts.isJsxElement(current) || ts.isJsxSelfClosingElement(current) || ts.isJsxFragment(current)) {
+      return null;
+    }
+    current = current.parent;
+  }
+  return null;
 }
 
 function isCopyBearingCallArgument(node) {
@@ -158,6 +285,7 @@ function isCopyBearingParameterDefault(node) {
 function looksLikeOperatorCopy(value, strongContext) {
   const text = value.replace(/\s+/g, " ").trim();
   if (text.length < 2 || text.length > 1_800 || !/[A-Za-z]{2}/.test(text)) return false;
+  if (isTechnicalSource(text)) return false;
   if (/^(?:https?:|mailto:|data:|\/|\.\/|\.\.\/|@|[A-Za-z]:\\)/.test(text)) return false;
   if (/^[a-z0-9_.:/@-]+$/.test(text)) return false;
   if (/^[A-Z0-9_./:-]+$/.test(text) && !strongContext) return false;
@@ -171,7 +299,7 @@ function looksLikeOperatorCopy(value, strongContext) {
 function extractCopy(sourceFile) {
   const values = new Set();
   const add = (raw, strongContext = false) => {
-    const normalized = raw.replace(/\s+/g, " ").trim();
+    const normalized = normalizeCopy(raw);
     if (looksLikeOperatorCopy(normalized, strongContext)) values.add(normalized);
   };
 
@@ -196,7 +324,7 @@ function extractCopy(sourceFile) {
 
     if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
       const parent = node.parent;
-      const jsxAttributeName = ts.isJsxAttribute(parent) ? propertyName(parent.name, sourceFile) : null;
+      const jsxAttributeName = jsxAttributeAncestor(node, sourceFile);
       const objectPropertyName = ts.isPropertyAssignment(parent) ? propertyName(parent.name, sourceFile) : null;
       const isImportPath =
         ts.isImportDeclaration(parent) ||
@@ -232,58 +360,6 @@ async function readExistingCatalog() {
   }
 }
 
-function chunks(values, maxItems = 24, maxChars = 5_000) {
-  const result = [];
-  let current = [];
-  let length = 0;
-  for (const value of values) {
-    const addition = value.length + separator.length + 2;
-    if (current.length > 0 && (current.length >= maxItems || length + addition > maxChars)) {
-      result.push(current);
-      current = [];
-      length = 0;
-    }
-    current.push(value);
-    length += addition;
-  }
-  if (current.length > 0) result.push(current);
-  return result;
-}
-
-async function translateBatch(values) {
-  const source = values.map((value) => value.replaceAll("Paperclip", "Zworker")).join(`\n${separator}\n`);
-  const url = new URL("https://translate.googleapis.com/translate_a/single");
-  url.searchParams.set("client", "gtx");
-  url.searchParams.set("sl", "en");
-  url.searchParams.set("tl", "ru");
-  url.searchParams.set("dt", "t");
-  url.searchParams.set("q", source);
-
-  const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-  if (!response.ok) throw new Error(`Translation request failed: ${response.status} ${response.statusText}`);
-  const payload = await response.json();
-  const translated = payload[0].map((part) => part[0]).join("");
-  const parts = translated.split(separator).map((part) => part.trim());
-  if (parts.length !== values.length) {
-    throw new Error(`Translation batch split mismatch: expected ${values.length}, received ${parts.length}`);
-  }
-  return Object.fromEntries(values.map((value, index) => [value, parts[index].replaceAll("Скрепка", "Zworker")]));
-}
-
-async function mapConcurrent(items, concurrency, mapper) {
-  const output = new Array(items.length);
-  let cursor = 0;
-  async function worker() {
-    while (cursor < items.length) {
-      const index = cursor;
-      cursor += 1;
-      output[index] = await mapper(items[index], index);
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
-  return output;
-}
-
 const files = await walk(uiRoot);
 const extracted = new Set();
 for (const file of files) {
@@ -299,33 +375,64 @@ for (const file of files) {
 }
 
 const existing = await readExistingCatalog();
+const normalizedExisting = Object.fromEntries(
+  Object.entries(existing).map(([source, translated]) => [
+    normalizeCopy(source),
+    decodeHtmlEntities(translated),
+  ]),
+);
 const sortedSources = [...extracted].sort((left, right) => left.localeCompare(right, "en"));
 const pending = sortedSources.filter(
-  (source) => !(source in existing) || (existing[source] === source && !(source in productOverrides)),
+  (source) =>
+    !isTechnicalSource(source) &&
+    !(source in productOverrides) &&
+    (!(source in normalizedExisting) ||
+      !normalizedExisting[source]?.trim() ||
+      normalizedExisting[source] === source),
 );
-let generated = {};
-
-if (shouldTranslate && pending.length > 0) {
-  const batches = chunks(pending);
-  process.stderr.write(`Translating ${pending.length} strings in ${batches.length} batches…\n`);
-  const translatedBatches = await mapConcurrent(batches, 4, async (batch, index) => {
-    const result = await translateBatch(batch);
-    process.stderr.write(`Translated batch ${index + 1}/${batches.length}\n`);
-    return result;
-  });
-  generated = Object.assign({}, ...translatedBatches);
-}
 
 const nextCatalog = Object.fromEntries(
   sortedSources.map((source) => [
     source,
-    (productOverrides[source] ?? generated[source] ?? existing[source] ?? source.replaceAll("Paperclip", "Zworker"))
+    (isTechnicalSource(source)
+      ? source
+      : productOverrides[source] ??
+        normalizedExisting[source] ??
+        source.replaceAll("Paperclip", "Zworker"))
       .replace(/Зворкер(?:а|у|ом|е)?/gi, "Zworker"),
   ]),
 );
 
 const serializedCatalog = `${JSON.stringify(nextCatalog, null, 2)}\n`;
 const existingSerializedCatalog = `${JSON.stringify(existing, null, 2)}\n`;
+const invalid = Object.entries(nextCatalog).filter(([, translated]) => !translated.trim());
+const preservedTokenPatterns = [
+  /`[^`]+`/g,
+  /\{\{\s*[^}]+?\s*\}\}/g,
+  /\$\{[^}]+\}/g,
+  /\{[A-Za-z_][A-Za-z0-9_.-]*\}/g,
+  /<\/?[A-Za-z_][A-Za-z0-9_.:/-]*>/g,
+  /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/g,
+  /\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g,
+  /\b[a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*\b/g,
+  /\b[A-Z][a-z0-9]+(?:[A-Z][A-Za-z0-9]*)+\b/g,
+  /--[a-z][a-z0-9-]*(?:=[^\s,]+)?/g,
+  /\b[A-Za-z0-9_.-]+\.(?:md|json|ya?ml|tsx?|jsx?|mjs|cjs|sh|py|css|html|csv|zip)\b/g,
+  /https?:\/\/[^\s"'<>]+/g,
+];
+const technicalTokenExceptions = new Set(["<empty>"]);
+const invalidTokens = [];
+for (const [source, translated] of Object.entries(nextCatalog)) {
+  if (technicalTokenExceptions.has(source)) continue;
+  for (const pattern of preservedTokenPatterns) {
+    const sourceTokens = source.match(pattern)?.sort() ?? [];
+    const translatedTokens = translated.match(pattern)?.sort() ?? [];
+    if (JSON.stringify(sourceTokens) !== JSON.stringify(translatedTokens)) {
+      invalidTokens.push({ source, sourceTokens, translatedTokens });
+      break;
+    }
+  }
+}
 if (checkOnly) {
   if (serializedCatalog !== existingSerializedCatalog) {
     process.stderr.write("Russian UI catalog is stale. Run `pnpm i18n:ru:generate`.\n");
@@ -334,7 +441,25 @@ if (checkOnly) {
 } else {
   await writeFile(catalogPath, serializedCatalog, "utf8");
 }
+if (invalid.length > 0) {
+  process.stderr.write(`\n${invalid.length} entries have an empty Russian translation:\n`);
+  for (const [source] of invalid) process.stderr.write(`- ${JSON.stringify(source)}\n`);
+  process.exitCode = 1;
+}
+if (invalidTokens.length > 0) {
+  process.stderr.write(`\n${invalidTokens.length} translations changed technical tokens:\n`);
+  for (const { source, sourceTokens, translatedTokens } of invalidTokens) {
+    process.stderr.write(
+      `- ${JSON.stringify(source)}: expected ${JSON.stringify(sourceTokens)}, got ${JSON.stringify(translatedTokens)}\n`,
+    );
+  }
+  process.exitCode = 1;
+}
+if (pending.length > 0) {
+  process.stderr.write(`\n${pending.length} entries still need a manual Russian translation:\n`);
+  for (const source of pending) process.stderr.write(`- ${JSON.stringify(source)}\n`);
+  process.exitCode = 1;
+}
 process.stderr.write(
-  `${checkOnly ? "Checked" : "Wrote"} ${Object.keys(nextCatalog).length} Russian UI entries at ${path.relative(repoRoot, catalogPath)}` +
-    `${shouldTranslate ? "" : " (run with --translate to fill new English fallbacks)"}.\n`,
+  `${checkOnly ? "Checked" : "Wrote"} ${Object.keys(nextCatalog).length} Russian UI entries at ${path.relative(repoRoot, catalogPath)}.\n`,
 );

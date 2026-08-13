@@ -1,6 +1,6 @@
 ---
 name: reflection-coach
-description: Reflect on another agent's recent execution record and propose the smallest durable instruction, skill, or tool-description change. Use for evidence-backed coaching proposals, never hot-swaps.
+description: Проанализировать недавнюю работу другого агента и предложить минимальное устойчивое изменение инструкции, навыка или описания инструмента. Использовать только для подтверждённых фактами предложений, без немедленного применения.
 key: paperclipai/bundled/paperclip-operations/reflection-coach
 recommendedForRoles:
   - manager
@@ -13,190 +13,177 @@ tags:
   - skills
 ---
 
-# Reflection Coach
+# Наставник по рефлексии
 
-You are coaching another agent. You are **not** that agent. Read their recent execution record, name the patterns, and propose the smallest durable change — to their `AGENTS.md`, to a reusable skill, or to a tool description — that would make them more effective going forward.
+Помогите другому агенту улучшить работу. Изучите его недавние запуски, найдите повторяющиеся закономерности и предложите минимальное устойчивое изменение в `AGENTS.md`, переиспользуемом навыке или описании инструмента.
 
-This skill runs **on a target agent** and produces a reviewable proposal. You may have permission to apply changes, but application is always gated: a displayed diff, an accepted task interaction, and a separate follow-up run. You never propose and apply in the same run.
+Навык запускается **для целевого агента** и создаёт проверяемое предложение. Применение всегда отделено: сначала показ различий и принятое взаимодействие задачи, затем отдельный запуск. Никогда не предлагайте и не применяйте изменение одновременно.
 
-Two load-bearing rules: **trajectories, not scores, are load-bearing**, and **changes apply only from a reviewed diff after an accepted interaction — never hot-swapped**.
+Ключевые правила: **основанием служат траектории, а не оценки**; **изменения применяются только после проверки различий и принятия взаимодействия, без горячей подмены**.
 
-## When to use
+## Когда использовать
 
-- An issue asks you to reflect on, coach, or review the recent work of a specific agent.
-- A routine (e.g. `recent-agent-reflection`) hands you a bounded set of agents to review.
-- Someone wants an evidence-backed proposal to improve an agent's instructions or skills.
+- Нужно проанализировать или проверить недавнюю работу конкретного агента.
+- Процедура вроде `recent-agent-reflection` передала ограниченный список агентов.
+- Требуется подтверждённое фактами улучшение инструкций или навыков агента.
 
-## When not to use
+## Когда не использовать
 
-- The target agent id is your own. Refuse — no self-reflection.
-- You are asked to rewrite product code or shared infra. That is out of scope.
-- You are asked to apply a change directly with no reviewed diff and no accepted interaction. Refuse and name the gate.
+- `targetAgentId` совпадает с вашим: саморефлексия запрещена.
+- Нужно менять код продукта или общую инфраструктуру: это вне области работы.
+- Изменение требуют применить без проверенных различий и принятого взаимодействия: откажитесь и назовите пропущенный контрольный этап.
 
-## Inputs
+## Входные данные
 
-Required:
+Обязательные:
 
-- `targetAgentId` — the agent you are coaching. Never coach yourself.
-- `windowHours` or `issueCount` — default to the last 10 completed/closed issues or the last 72 hours, whichever is larger. Cap at 25 issues to stay within budget.
+- `targetAgentId` — агент, которому вы помогаете.
+- `windowHours` или `issueCount` — по умолчанию последние 10 завершённых/закрытых задач либо последние 72 часа, в зависимости от того, какой набор больше; максимум 25 задач.
 
-Optional:
+Необязательные:
 
-- `focus` — free-text hint ("verification misses", "late escalations"). Bias clustering toward this axis if given.
-- `replayIssueIds` — a pinned subset of past issues used as the replay benchmark. If absent, pick 3–5 representative recent issues from the window.
+- `focus` — направление анализа, например «пропуски проверки» или «поздние эскалации».
+- `replayIssueIds` — прошлые задачи для повторной проверки. Если не заданы, выберите 3–5 показательных задач из периода.
 
-## Hard guardrails
+## Жёсткие ограничения
 
-Every proposal must satisfy all of these:
+- **Не применять в том же запуске.** Исследование и применение выполняются раздельно.
+- **Размер:** навык ≤15 КБ, описание инструмента ≤500 символов, рост `AGENTS.md` за предложение ≤20%. Более крупное изменение разделите.
+- **Только доказанные правила.** Для каждого приведите точную цитату или идентификатор недавней задачи. Нет доказательства — нет правила.
+- **Только область агента.** Не меняйте чужой код и общую инфраструктуру.
+- **Повторная проверка обязательна.** Назовите прошлые успешные случаи; исключите правило, которое сломало бы их без веской причины.
+- Если `targetAgentId == PAPERCLIP_AGENT_ID`, откажитесь и запросите другого наставника.
 
-- **No same-run apply.** Discovery and application are separate runs. You produce a diff plus an assignment plan; a human or the board accepts it through an interaction before anything is applied.
-- **Size caps.** Skills ≤ 15KB. Tool descriptions ≤ 500 chars. `AGENTS.md` may grow by **at most +20%** per proposal. Want more? Split proposals.
-- **Trajectory-backed or drop it.** Every proposed rule cites at least one concrete quote or issue id from the target's recent record. No evidence, no rule.
-- **Not your code.** Only propose changes to the target's instructions, their skills, or their tool descriptions. Never to code they do not own or to shared infra.
-- **Benchmark-gated.** Name the replay cases the proposal must still resolve. If a rule would have broken a past success, drop it.
-- **No reflection on yourself.** If `targetAgentId == PAPERCLIP_AGENT_ID`, refuse and ask for another coach.
+## Процедура
 
-## Procedure
-
-### 1) Confirm target and scope
+### 1. Подтвердите цель
 
 ```sh
 curl -sS "$PAPERCLIP_API_URL/api/agents/<targetAgentId>" \
   -H "Authorization: Bearer $PAPERCLIP_API_KEY"
 ```
 
-Record `name`, `role`, `reportsTo`, `adapterType`, `adapterConfig.instructionsFilePath` (where `AGENTS.md` lives), and current assigned skills via `GET /api/agents/<targetAgentId>/skills`. Refuse and exit if `targetAgentId == $PAPERCLIP_AGENT_ID`.
+Запишите `name`, `role`, `reportsTo`, `adapterType`, путь `adapterConfig.instructionsFilePath` и навыки из `GET /api/agents/<targetAgentId>/skills`. При совпадении с `$PAPERCLIP_AGENT_ID` завершите работу отказом.
 
-### 2) Pull the recent record
+### 2. Получите историю
 
 ```sh
 curl -sS "$PAPERCLIP_API_URL/api/companies/$PAPERCLIP_COMPANY_ID/issues?assigneeAgentId=<targetAgentId>&status=done,in_review,blocked&limit=25" \
   -H "Authorization: Bearer $PAPERCLIP_API_KEY"
 ```
 
-For each issue, pull the trajectory substrate — the issue body and its comments:
+Для каждой задачи получите описание и комментарии:
 
 ```sh
 curl -sS "$PAPERCLIP_API_URL/api/issues/<issueId>" -H "Authorization: Bearer $PAPERCLIP_API_KEY"
 curl -sS "$PAPERCLIP_API_URL/api/issues/<issueId>/comments" -H "Authorization: Bearer $PAPERCLIP_API_KEY"
 ```
 
-Keep status transitions, blocker reasons, reviewer comments, approval outcomes, human corrections, and PR-link comments. Comments are the closest thing Zworker has to an execution trace — treat them as first-class evidence.
+Сохраняйте переходы статусов, причины блокировки, отзывы, согласования, исправления человека и ссылки на PR. Комментарии — полноценные доказательства траектории.
 
-### 3) Read the target's current guardrails
+### 3. Прочитайте действующие правила
 
-Before proposing anything, read what already exists so you don't restate it:
+Изучите `AGENTS.md`, назначенные навыки и, если адаптер использует `para-memory-files`, файлы `MEMORY.md` и `memory/`. Не предлагайте уже существующее правило. Если оно есть, но не выполняется, предложите способ закрепить его: перенести в навык, добавить отрицательный пример или усилить условие срабатывания.
 
-- Their `AGENTS.md` at `adapterConfig.instructionsFilePath`.
-- Their assigned skills (from step 1).
-- Any `MEMORY.md` / `memory/` files in their cwd if the adapter uses para-memory-files.
+### 4. Сгруппируйте ошибки
 
-If a rule you were about to propose is already present, drop it. A failure pattern *despite* an existing rule is a different finding — record it as "existing rule X is not being followed" and propose how to make it stick (move to a skill, add a negative example, strengthen the trigger), not a duplicate.
+- **verifier-miss** — агент сообщил о завершении, но проверка не пройдена.
+- **avoidable-rework** — задача повторно открывалась больше раза.
+- **stale-context** — использовано уже опровергнутое предположение.
+- **instruction-miss** — нарушено правило из `AGENTS.md`.
+- **late-escalation** — блокировка слишком долго не эскалировалась.
+- **human-correction** — человек явно потребовал действовать иначе.
+- **tool-misuse** — повторяется одна ошибка инструмента.
+- **scope-creep** — изменения вышли за пределы задачи.
 
-### 4) Cluster the failures
+Для группы храните кортежи `(issueId, commentId, краткая цитата)`. Группа считается закономерностью только при наличии ≥2 кортежей.
 
-Name each cluster from this taxonomy:
+### 5. Выберите поверхность изменения
 
-- **verifier-miss** — agent claimed done; reviewer rejected.
-- **avoidable-rework** — same issue reopened more than once.
-- **stale-context** — acted on an assumption already falsified in-thread.
-- **instruction-miss** — violated an existing rule in `AGENTS.md`.
-- **late-escalation** — stayed blocked too long without escalating.
-- **human-correction** — a user explicitly said to do X differently.
-- **tool-misuse** — hit the same tool-error pattern repeatedly.
-- **scope-creep** — changes beyond task scope.
+- Узкое правило одного агента → `AGENTS.md`.
+- Общая многошаговая процедура → навык.
+- Нужны процедура и условие её вызова → навык плюс строка-указатель в `AGENTS.md`.
+- Непонятно, когда применять инструмент → его описание, если достаточно ≤500 символов.
 
-For each cluster keep a list of `(issueId, commentId, one-line evidence quote)` tuples. **No cluster survives without at least 2 evidence tuples** — one-offs are not patterns.
+Общее правило разработчиков должно быть общим навыком; правило одной роли — частью `AGENTS.md`.
 
-### 5) Route each cluster to a target surface
+### 6. Подготовьте предложение
 
-- **Agent-specific, narrow, cheap to state** → `AGENTS.md` update. E.g. "always re-run failing tests before marking in_review."
-- **Generalizable, multi-step procedure with when-to-use logic** → new or updated reusable skill.
-- **Both** → update/create the skill AND add a pointer line in `AGENTS.md` so the agent knows when to reach for it. Common case for non-obvious procedures.
-- **Tool description** → only if the failure was "agent didn't know when to use tool X" and a ≤500-char description change fixes it.
-
-Sanity check reuse honestly: a rule that applies to all coders belongs in a shared skill; a "reusable skill" that only fits one role belongs in that agent's `AGENTS.md`.
-
-### 6) Draft the proposal document
-
-Create a document attached to the **reflection issue** (never the target's issues). One section per cluster:
+Прикрепите документ к **задаче рефлексии**, не к задачам целевого агента. Для каждой группы используйте шаблон:
 
 ```markdown
-## Cluster: <name>
+## Группа: <название>
 
-**Pattern (1 sentence, quotable):**
-**Root cause hypothesis:**
-**Evidence (≥2):**
-- [PAP-NNN](/PAP/issues/PAP-NNN) — "<verbatim fragment>"
-- [PAP-MMM](/PAP/issues/PAP-MMM) — "<verbatim fragment>"
+**Закономерность:** <одно предложение>
+**Предполагаемая причина:**
+**Доказательства (≥2):**
+- [PAP-NNN](/PAP/issues/PAP-NNN) — «<дословный фрагмент>»
+- [PAP-MMM](/PAP/issues/PAP-MMM) — «<дословный фрагмент>»
 
-**Proposed change:**
-- Target surface: AGENTS.md | skill:<slug> | both | tool-description:<tool>
-- Diff (inline, minimal, ≤20% AGENTS.md growth / ≤15KB skill):
+**Изменение:**
+- Поверхность: AGENTS.md | skill:<slug> | both | tool-description:<tool>
+- Минимальные различия:
     ```diff
     ...
     ```
 
-**Expected still-passes (replay):**
+**Успешные повторные проверки:**
 - [PAP-XXX](/PAP/issues/PAP-XXX), [PAP-YYY](/PAP/issues/PAP-YYY)
 
-**Why this change, not something bigger:**
-(1–2 sentences on why you didn't rewrite more.)
+**Почему не более крупное изменение:** <1–2 предложения>
 ```
 
-### 7) Write the actual drafts (files, not just prose)
+### 7. Создайте настоящие черновики
 
-- **Skill surface** — draft a full `SKILL.md` (frontmatter → Overview → When to use → Process → Pitfalls → Verification), ≤ 15KB. Put it under `drafts/<skill-slug>/SKILL.md` and attach it to the reflection issue.
-- **AGENTS.md surface** — write a unified diff against the target's current `AGENTS.md`. Do not rewrite the whole file; quote 1–3 lines of context per change. Keep total growth ≤ +20%; split if you can't.
+- Для навыка подготовьте полный `drafts/<skill-slug>/SKILL.md` с метаданными, обзором, условиями, процедурой, ошибками и проверкой; размер ≤15 КБ. Прикрепите его к задаче.
+- Для `AGENTS.md` подготовьте унифицированные различия с 1–3 строками контекста, не переписывая файл целиком; рост ≤20%.
 
-### 8) Benchmark-gate the proposal
+### 8. Выполните повторную проверку
 
-For each pinned replay issue, ask: "If this rule had been in effect, would the agent still have succeeded?" Drop or reword any rule that would have blocked a past success without a clear reason. Record the walk in "Expected still-passes." This is a lightweight stand-in for a real replay harness — the discipline is the point.
+Для каждой закреплённой задачи спросите: «Сохранился бы успех при этом правиле?» Исключите или уточните мешающие правила. Результат внесите в «Успешные повторные проверки».
 
-### 9) Publish and request acceptance
+### 9. Опубликуйте и запросите принятие
 
-From a reflection issue (assigned to the target's manager or the requester):
+1. Прикрепите предложение: `PUT /api/issues/{issueId}/documents/reflection-proposal`.
+2. Прикрепите черновик навыка либо сохраните его в `skills/<skill-slug>/` и добавьте ссылку.
+3. Создайте взаимодействие `request_confirmation`: покажите различия в `payload.detailsMarkdown`, задайте `continuationPolicy: wake_assignee_on_accept` и точный `payload.target.key`.
+4. В комментарии укажите агента, период, группы, поверхности, ссылки и ответственного за следующий шаг.
 
-1. Attach the proposal document: `PUT /api/issues/{issueId}/documents/reflection-proposal`.
-2. If a draft skill was written, commit it under `skills/<skill-slug>/` (or attach it) and link it in the proposal.
-3. Open the acceptance gate with a task interaction on the reflection issue. Mutations that change instructions, skills, or tool descriptions must use `request_confirmation`, show the diff in `payload.detailsMarkdown`, set `continuationPolicy: wake_assignee_on_accept`, and include the exact `payload.target.key` listed below.
-4. Leave a comment summarizing: target agent, window, clusters found, surfaces touched, link to the proposal, link to the interaction, and the next-step owner.
+Допустимые ключи целей:
 
-Server-enforced mutation target keys:
+- `agent:<agentId>:instructions` — инструкции агента;
+- `agent:<agentId>:profile` — профиль или описание инструмента;
+- `skill:<skillId>` — навык компании;
+- `skill-slug:<slug>` — новый локальный навык;
+- `skill-import:<source>` — импортированный или каталожный навык;
+- `skills:scan-projects` — сканирование навыков проектов.
 
-- Agent instructions: `agent:<agentId>:instructions`
-- Agent/tool description fields: `agent:<agentId>:profile`
-- Existing company skill: `skill:<skillId>`
-- New local company skill by slug: `skill-slug:<slug>`
-- Imported or catalog skill source: `skill-import:<source>`
-- Project workspace skill scan: `skills:scan-projects`
+### 10. Примените только после принятия
 
-### 10) Apply only after acceptance, in a follow-up run
+После статуса **accepted** выполните отдельный запуск:
 
-When the interaction resolves **accepted**, apply the change in a *separate* run:
+- `AGENTS.md` — примените ровно принятые различия.
+- Навык — установите или обновите его, затем при необходимости вызовите `POST /api/agents/<targetAgentId>/skills/sync` с `{"mode":"add","desiredSkills":["<skill-ref>"]}`. `remove` применяйте только к названным назначениям, `replace` — только после явного подтверждения полной замены.
+- Описание инструмента — измените только названное поле профиля.
 
-- **AGENTS.md** — update the target's managed instruction file exactly as the accepted diff specified.
-- **Skill** — install/update the skill in the company library, then `POST /api/agents/<targetAgentId>/skills/sync` with `{"mode":"add","desiredSkills":["<skill-ref>"]}` when the target should receive it. Use `remove` only for the named assignments. Use `replace` only after explicit confirmation to overwrite the complete desired skill set.
-- **Tool description** — update the target agent's description/profile field that the accepted diff named.
+Сервер отклонит изменение, если принятое `request_confirmation` не было создано Наставником по рефлексии в предыдущем запуске, не показывает различия или не связано с ресурсом допустимым ключом. При статусе rejected или pending ничего не применяйте.
 
-The server rejects Reflection Coach mutations unless the accepted `request_confirmation` was created by Reflection Coach in a previous run, has a displayed diff, and is bound to the resource by one of the target keys above. If the interaction was rejected or is still pending, apply nothing. If you were asked to apply without a reviewed diff and an accepted interaction, refuse and name the gate — no-same-run-apply is load-bearing.
+## Типичные ошибки
 
-## Pitfalls
+- Оценивать без цитат и траекторий.
+- Предлагать переработку крупнее необходимой.
+- Дублировать существующие правила вместо их закрепления.
+- Применять изменение в запуске исследования.
+- Незаметно расширять область и превышать лимиты.
+- Обещать изменение агента до принятия и отдельного запуска.
 
-- **Scoring without trajectories.** Don't say "failed 3 times" without quoting the failures. Scores alone collapse improvement rate.
-- **Proposing the bigger rewrite.** Your job is the smallest change that would have prevented the cluster. Bigger feels impressive; it isn't.
-- **Duplicating rules the agent already has.** Read `AGENTS.md` + assigned skills first. An existing-but-unfollowed rule is a "make it stick" proposal, not a restatement.
-- **Applying in the discovery run.** Even with permission, discovery and application are separate runs behind an accepted interaction.
-- **Silently expanding scope.** The +20% cap exists because every new rule competes for attention. Four small proposals beat one big rewrite.
-- **Promising runtime value.** You are not improving the agent mid-session. This is offline, diff-reviewed, interaction-gated.
+## Проверка перед публикацией
 
-## Verification (self-check before publishing)
-
-- [ ] `targetAgentId != $PAPERCLIP_AGENT_ID`
-- [ ] Each cluster has ≥2 evidence tuples with a linked issue + verbatim quote
-- [ ] Each proposal names the target surface explicitly and includes the diff (not just prose)
-- [ ] `AGENTS.md` growth ≤ 20%, skills ≤ 15KB, tool descriptions ≤ 500 chars
-- [ ] Replay set has ≥3 past issues the rules still pass against
-- [ ] Proposal document linked from the reflection issue
-- [ ] An acceptance interaction (showing the diff) is open before any mutation
-- [ ] No claim that the target has already "been updated" before acceptance + follow-up run
+- [ ] Целевой агент — не вы
+- [ ] В каждой группе ≥2 ссылки и дословные цитаты
+- [ ] Для каждой поверхности показаны различия
+- [ ] Соблюдены лимиты 20% / 15 КБ / 500 символов
+- [ ] ≥3 прошлых задач успешно проходят повторную проверку
+- [ ] Предложение связано с задачей рефлексии
+- [ ] До изменения открыто взаимодействие с различиями
+- [ ] До принятия нет заявления, что агент уже обновлён

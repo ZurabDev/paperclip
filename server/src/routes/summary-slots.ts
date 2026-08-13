@@ -166,7 +166,7 @@ export function summarySlotRoutes(db: Db) {
       assertCompanyAccess(req, companyId);
       await assertSummariesEnabled();
       if (req.actor.type !== "agent") {
-        throw forbidden("Only the Summarizer built-in agent may write summaries");
+        throw forbidden("Записывать сводки может только встроенный Агент сводок");
       }
       const actor = getActorInfo(req);
       const result = await svc.write(

@@ -222,12 +222,12 @@ describeEmbeddedPostgres("summary slot service", () => {
         .then((rows) => rows[0]!);
       expect(issueRow.assigneeAgentId).toBe(summarizerAgentId);
       expect(issueRow.companyId).toBe(companyId);
-      expect(issueRow.title).toMatch(/^Summarize project on \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
+      expect(issueRow.title).toMatch(/^Сводка проекта на \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
       expect(issueRow.hiddenAt).toBeInstanceOf(Date);
       expect(issueRow.description).toContain(
         '"generationIssueId": "' + result.generatingIssue.id + '"',
       );
-      expect(issueRow.description).toContain("Call `/summarize-status`");
+      expect(issueRow.description).toContain("Вызовите `/summarize-status`");
       expect(issueRow.description).not.toContain("Follow the Summarizer skill");
       expect(issueRow.description).toContain(
         `GET /api/companies/${companyId}/summary-slots/project/header?scopeId=${projectId}`,
@@ -238,30 +238,19 @@ describeEmbeddedPostgres("summary slot service", () => {
       expect(issueRow.description).toContain(
         `PUT /api/companies/${companyId}/summary-slots/project/header`,
       );
-      expect(issueRow.description).toContain(
-        "opens with the 1–3 specific, concrete, actionable items",
-      );
-      expect(issueRow.description).toContain("unblock this work");
-      expect(issueRow.description).toContain(
-        "read whatever issues you need to understand the state",
-      );
-      expect(issueRow.description).toContain(
-        "a reader who has not memorized issue ids or threads",
-      );
-      expect(issueRow.description).toContain(
-        "a trailing list of issue links or any link dump",
-      );
-      expect(issueRow.description).toContain("Not a task list");
-      expect(issueRow.description).toContain(
-        "first plain-text `STATUS:` line immediately",
-      );
-      expect(issueRow.description).toContain("sentinel-wrapped summary draft");
-      expect(issueRow.description).toContain("## Prebuilt scope snapshot");
-      expect(issueRow.description).toContain("### Blocked");
+      expect(issueRow.description).toContain("Начните с 1–3 конкретных выполнимых действий");
+      expect(issueRow.description).toContain("для разблокировки работы");
+      expect(issueRow.description).toContain("Самостоятельно прочитайте необходимые задачи");
+      expect(issueRow.description).toContain("читателя, который не помнит идентификаторы задач и обсуждения");
+      expect(issueRow.description).toContain("перечень задач или набор ссылок");
+      expect(issueRow.description).toContain("немедленно, до анализа, отправьте первую строку `STATUS:`");
+      expect(issueRow.description).toContain("между служебными маркерами");
+      expect(issueRow.description).toContain("## Подготовленный снимок области");
+      expect(issueRow.description).toContain("### Заблокировано");
       expect(issueRow.description).toContain("Waiting on board approval");
-      expect(issueRow.description).toContain("### In progress");
+      expect(issueRow.description).toContain("### В работе");
       expect(issueRow.description).toContain("Implement summary cards");
-      expect(issueRow.description).toContain("### Recently done");
+      expect(issueRow.description).toContain("### Недавно завершено");
       expect(issueRow.description).toContain("Ship the previous summary");
       expect(issueRow.description).toContain(`/${issuePrefix(companyId)}/issues/`);
       expect(issueRow.description).not.toContain("/PAP/issues/");

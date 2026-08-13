@@ -227,7 +227,7 @@ describeEmbeddedPostgres("built-in agents", () => {
     expect(created.agentId).toBeTruthy();
     expect(created.agent).toMatchObject({
       companyId,
-      name: "Briefs Agent",
+      name: "Агент оперативных сводок",
       adapterConfig: {},
       status: "idle",
     });
@@ -272,7 +272,7 @@ describeEmbeddedPostgres("built-in agents", () => {
       status: "pending_approval",
       agent: {
         companyId,
-        name: "Briefs Agent",
+        name: "Агент оперативных сводок",
         status: "pending_approval",
         adapterType: "process",
         adapterConfig: { command: "echo safe" },
@@ -286,7 +286,7 @@ describeEmbeddedPostgres("built-in agents", () => {
       requestedByUserId: "board-user",
       requestedByAgentId: null,
       payload: {
-        name: "Briefs Agent",
+        name: "Агент оперативных сводок",
         role: "general",
         adapterType: "process",
         adapterConfig: { command: "echo safe" },
@@ -559,10 +559,10 @@ describeEmbeddedPostgres("built-in agents", () => {
       status: "ready",
       agentId: ready.agentId,
       agent: {
-        name: "Briefs Agent",
+        name: "Агент оперативных сводок",
         role: "general",
         title: null,
-        capabilities: "Prepares concise operational briefs for the board and agent company.",
+        capabilities: "Готовит краткие оперативные сводки для совета и агентской компании.",
         adapterType: "codex_local",
         adapterConfig: { model: "gpt-5.4" },
       },
@@ -595,9 +595,9 @@ describeEmbeddedPostgres("built-in agents", () => {
       status: "paused",
       agent: {
         companyId,
-        name: "Reflection Coach",
+        name: "Наставник по рефлексии",
         role: "general",
-        title: "Reflection Coach",
+        title: "Наставник по рефлексии",
         icon: "eye",
         adapterType: "codex_local",
         permissions: {
@@ -638,7 +638,7 @@ describeEmbeddedPostgres("built-in agents", () => {
 
     const [routine] = await db.select().from(routines).where(eq(routines.companyId, companyId));
     expect(routine).toMatchObject({
-      title: "Review recent agent trajectories for coaching proposals",
+      title: "Проверка недавней работы агентов для предложений по улучшению",
       status: "paused",
       assigneeAgentId: state.agentId,
     });
@@ -721,7 +721,7 @@ describeEmbeddedPostgres("built-in agents", () => {
       status: "pending_approval",
       agent: {
         companyId,
-        name: "Reflection Coach",
+        name: "Наставник по рефлексии",
         status: "pending_approval",
         reportsTo: root.id,
         budgetMonthlyCents: 0,
@@ -741,6 +741,9 @@ describeEmbeddedPostgres("built-in agents", () => {
       status: "pending",
       payload: {
         agentId: state.agentId,
+        name: "Наставник по рефлексии",
+        title: "Наставник по рефлексии",
+        capabilities: "Анализирует недавнюю работу агентов на основе фактов, предлагает небольшие улучшения инструкций и навыков и запрашивает одобрение до применения изменений.",
         sourceBuiltInAgentKey: "reflection-coach",
         featureKeys: ["reflection-coach"],
         reportsTo: root.id,
@@ -752,6 +755,11 @@ describeEmbeddedPostgres("built-in agents", () => {
 
     const pendingReconcile = await reconcileBuiltInAgentsOnStartup(db);
     expect(pendingReconcile.pendingApprovals).toBe(2);
+    const reconciledApproval = await approvalService(db).getById(approval.id);
+    expect(reconciledApproval?.payload as Record<string, unknown>).toMatchObject({
+      name: "Наставник по рефлексии",
+      title: "Наставник по рефлексии",
+    });
     const stillPending = await builtInAgentService(db).get(companyId, "reflection-coach");
     expect(stillPending).toMatchObject({
       status: "pending_approval",
@@ -816,7 +824,7 @@ describeEmbeddedPostgres("built-in agents", () => {
       resetAvailable: false,
     });
     const resetFile = await instructions.readFile(reset.agent!, "AGENTS.md");
-    expect(resetFile.content).toContain("Reflection Coach");
+    expect(resetFile.content).toContain("Наставник по рефлексии");
     expect(resetFile.content).not.toContain("Operator edit.");
   });
 
@@ -905,10 +913,10 @@ describeEmbeddedPostgres("built-in agents", () => {
 
     const [row] = await db.select().from(agents).where(eq(agents.id, agentId));
     expect(row).toMatchObject({
-      name: "Briefs Agent",
+      name: "Агент оперативных сводок",
       role: "general",
       title: null,
-      capabilities: "Prepares concise operational briefs for the board and agent company.",
+      capabilities: "Готовит краткие оперативные сводки для совета и агентской компании.",
     });
     expect(readBuiltInAgentMarker(row?.metadata)).toEqual({ key: "briefs", featureKeys: ["briefs"] });
   });
@@ -1098,8 +1106,8 @@ describeEmbeddedPostgres("built-in agents", () => {
 
     expect(state.agent).toMatchObject({
       companyId,
-      name: "Reflection Coach",
-      title: "Reflection Coach",
+      name: "Наставник по рефлексии",
+      title: "Наставник по рефлексии",
       icon: "eye",
       reportsTo: root.id,
       adapterType: "codex_local",
@@ -1136,7 +1144,7 @@ describeEmbeddedPostgres("built-in agents", () => {
 
     const [routine] = await db.select().from(routines).where(eq(routines.companyId, companyId));
     expect(routine).toMatchObject({
-      title: "Review recent agent trajectories for coaching proposals",
+      title: "Проверка недавней работы агентов для предложений по улучшению",
       status: "paused",
       assigneeAgentId: state.agentId,
       originKind: "built_in_agent_bundle",
@@ -1173,8 +1181,8 @@ describeEmbeddedPostgres("built-in agents", () => {
 
     expect(state.agent).toMatchObject({
       companyId,
-      name: "Summarizer",
-      title: "Summarizer",
+      name: "Агент сводок",
+      title: "Агент сводок",
       icon: "sparkles",
       role: "general",
       reportsTo: root.id,
@@ -1183,7 +1191,7 @@ describeEmbeddedPostgres("built-in agents", () => {
       budgetMonthlyCents: 0,
     });
     expect(state.status).toBe("paused");
-    expect(state.pauseReason).toBe("Built-in Summarizer is disabled until explicitly configured.");
+    expect(state.pauseReason).toBe("Встроенный агент «Агент сводок» отключён до явной настройки.");
     expect(readBuiltInAgentMarker(state.agent?.metadata)).toEqual({
       key: "summarizer",
       featureKeys: ["summarizer"],
@@ -1212,7 +1220,7 @@ describeEmbeddedPostgres("built-in agents", () => {
       .from(routines)
       .where(and(eq(routines.companyId, companyId), eq(routines.assigneeAgentId, state.agentId!)));
     expect(routine).toMatchObject({
-      title: "Refresh stale summary slots",
+      title: "Обновление устаревших сводок",
       status: "paused",
       assigneeAgentId: state.agentId,
       originKind: "built_in_agent_bundle",
@@ -1285,7 +1293,7 @@ describeEmbeddedPostgres("built-in agents", () => {
       resetAvailable: false,
     });
     const resetFile = await instructions.readFile(reset.agent!, "AGENTS.md");
-    expect(resetFile.content).toContain("Summarizer");
+    expect(resetFile.content).toContain("Агент сводок");
     expect(resetFile.content).toContain("<<<SUMMARY-DRAFT>>>");
     expect(resetFile.content).toContain("<<<END-SUMMARY-DRAFT>>>");
     expect(resetFile.content).not.toContain("Operator edit.");
@@ -1610,8 +1618,8 @@ describeEmbeddedPostgres("built-in agents", () => {
       stockStatus: "stock_current",
       resetAvailable: false,
     });
-    expect((await instructionsSvc.readFile(reset.agent!, "AGENTS.md")).content).toContain("You are Reflection Coach");
+    expect((await instructionsSvc.readFile(reset.agent!, "AGENTS.md")).content).toContain("Наставник по рефлексии");
     const [resetRoutine] = await db.select().from(routines).where(eq(routines.companyId, companyId));
-    expect(resetRoutine?.title).toBe("Review recent agent trajectories for coaching proposals");
+    expect(resetRoutine?.title).toBe("Проверка недавней работы агентов для предложений по улучшению");
   });
 });

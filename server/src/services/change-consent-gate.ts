@@ -125,14 +125,14 @@ export function changeConsentGateService(db: Db) {
 
       const actorRunId = readNonEmptyString(input.actorRunId);
       if (!actorRunId) {
-        throw forbidden("Reflection Coach mutations require a run id", {
+        throw forbidden("Для изменений Наставника по рефлексии требуется идентификатор запуска", {
           code: "reflection_coach_mutation_run_id_required",
         });
       }
 
       const targetKeys = [...new Set(input.targetKeys.map(readNonEmptyString).filter((key): key is string => Boolean(key)))];
       if (targetKeys.length === 0) {
-        throw forbidden("Reflection Coach mutation target is not gateable", {
+        throw forbidden("Для цели изменения Наставника по рефлексии нельзя запросить одобрение", {
           code: "reflection_coach_mutation_target_required",
         });
       }
@@ -176,8 +176,8 @@ export function changeConsentGateService(db: Db) {
 
       if (!accepted) {
         throw forbidden(
-          "Reflection Coach mutations require an accepted request_confirmation with a displayed diff for this target, "
-            + "created in a previous run and not already consumed.",
+          "Для изменений Наставника по рефлексии требуется принятое подтверждение request_confirmation с показанной разницей для этой цели, "
+            + "созданное в предыдущем запуске и ещё не использованное.",
           {
             code: "reflection_coach_mutation_gate_required",
             targetKeys,
@@ -188,8 +188,8 @@ export function changeConsentGateService(db: Db) {
       const acceptedResult = accepted.result as RequestConfirmationResult | null;
       if (!acceptedResult) {
         throw forbidden(
-          "Reflection Coach mutations require an accepted request_confirmation with a displayed diff for this target, "
-            + "created in a previous run and not already consumed.",
+          "Для изменений Наставника по рефлексии требуется принятое подтверждение request_confirmation с показанной разницей для этой цели, "
+            + "созданное в предыдущем запуске и ещё не использованное.",
           {
             code: "reflection_coach_mutation_gate_required",
             targetKeys,
@@ -217,8 +217,8 @@ export function changeConsentGateService(db: Db) {
 
       if (!consumed) {
         throw forbidden(
-          "Reflection Coach mutations require an accepted request_confirmation with a displayed diff for this target, "
-            + "created in a previous run and not already consumed.",
+          "Для изменений Наставника по рефлексии требуется принятое подтверждение request_confirmation с показанной разницей для этой цели, "
+            + "созданное в предыдущем запуске и ещё не использованное.",
           {
             code: "reflection_coach_mutation_gate_required",
             targetKeys,

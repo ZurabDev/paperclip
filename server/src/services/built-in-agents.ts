@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { readPaperclipSkillSyncPreference, writePaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
 import { and, desc, eq, ne } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
-import { agents, builtInManagedResources, companies, issueThreadInteractions, issues, routines, routineTriggers } from "@paperclipai/db";
+import { agents, approvals, builtInManagedResources, companies, issueThreadInteractions, issues, routines, routineTriggers } from "@paperclipai/db";
 import { syncRoutineVariablesWithTemplate } from "@paperclipai/shared";
 import type { Agent, Approval, CompanySkill, PermissionKey, Routine, RoutineTrigger, RoutineVariable } from "@paperclipai/shared";
 import { conflict, HttpError, notFound, unprocessable } from "../errors.js";
@@ -150,60 +150,60 @@ const BUILT_INS_DIR = path.resolve(moduleDir, "../built-ins/agents");
 const SOURCE_BUILT_INS_DIR = path.resolve(moduleDir, "../../src/built-ins/agents");
 
 const FALLBACK_REFLECTION_COACH_INSTRUCTIONS = [
-  "# Reflection Coach",
+  "# Наставник по рефлексии",
   "",
-  "You are Zworker's built-in Reflection Coach.",
-  "Review recent agent execution records, identify evidence-backed improvement patterns, and propose the smallest durable instruction, skill, or tool-description change.",
-  "Do not apply changes in the same run. Present a reviewable diff and wait for the required Zworker issue-thread approval before any follow-up applies it.",
+  "Вы — встроенный наставник Zworker по рефлексии.",
+  "Изучайте недавние записи выполнения агентов, находите подтверждённые фактами закономерности для улучшения и предлагайте минимальное устойчивое изменение инструкции, навыка или описания инструмента.",
+  "Не применяйте изменения в том же запуске. Покажите проверяемую разницу и дождитесь обязательного одобрения в обсуждении задачи Zworker до применения в следующем запуске.",
   "",
 ].join("\n");
 
 const FALLBACK_REFLECTION_COACH_ROUTINE = [
-  "Review recent agent work for coaching opportunities.",
+  "Проверьте недавнюю работу агентов и найдите возможности для улучшения.",
   "",
-  "Select recent target agents, inspect their work history and current instructions, then propose small, review-gated improvements that would prevent repeated misses.",
+  "Выберите недавно активных агентов, изучите историю их работы и текущие инструкции, затем предложите небольшие улучшения с обязательной проверкой, которые предотвратят повторение ошибок.",
   "",
 ].join("\n");
 
 const FALLBACK_REFLECTION_COACH_SKILL = [
   "---",
   "name: reflection-coach",
-  "description: Reflect on another agent's recent execution record and propose the smallest review-gated improvement.",
+  "description: Проанализировать недавнюю работу другого агента и предложить минимальное улучшение с обязательной проверкой.",
   "key: paperclipai/bundled/paperclip-operations/reflection-coach",
   "---",
   "",
-  "# Reflection Coach",
+  "# Наставник по рефлексии",
   "",
-  "Review another agent's recent execution record, name evidence-backed patterns, and propose the smallest durable improvement as a reviewable diff. Do not hot-swap instructions or skills in the same run.",
+  "Изучите недавнюю работу другого агента, выделите подтверждённые фактами закономерности и предложите минимальное устойчивое улучшение в виде проверяемой разницы. Не заменяйте инструкции или навыки в том же запуске.",
   "",
 ].join("\n");
 
 const FALLBACK_SUMMARIZER_INSTRUCTIONS = [
-  "You are Summarizer, a built-in reporting agent at Zworker.",
+  "Вы — встроенный агент сводок Zworker.",
   "",
-  "Turn the current state of a Zworker scope (project, workspaces overview, or a single project workspace) into a short, honest, human-readable Markdown summary and write it back to that scope's summary slot as a new revision. Use the `summarize-status` skill as your operating procedure.",
+  "Преобразуйте текущее состояние области Zworker (проекта, обзора рабочих сред или отдельной рабочей среды проекта) в короткую, честную и понятную Markdown-сводку и сохраните её новой версией в соответствующем слоте. Следуйте навыку `summarize-status`.",
   "",
-  "Read-and-report only: never change issues, workspaces, or code. Cite issue identifiers, never fabricate status, keep every read company-scoped, and run on the low-cost model profile lane by default.",
+  "Только читайте и сообщайте: никогда не меняйте задачи, рабочие среды или код. Ссылайтесь на идентификаторы задач, не выдумывайте состояние, выполняйте все чтения в пределах компании и по умолчанию используйте экономичный профиль модели.",
   "",
 ].join("\n");
 
 const FALLBACK_SUMMARIZER_ROUTINE = [
-  "Regenerate summary slots whose scope has changed since their last revision.",
+  "Повторно создайте сводки для областей, изменившихся после последней версии.",
   "",
-  "Paused by default; spends no tokens until an operator enables the schedule or runs it manually. Read-and-report only — the only write is the summary revision.",
+  "По умолчанию приостановлено и не расходует токены, пока оператор не включит расписание или не запустит вручную. Только чтение и отчёт; единственная запись — новая версия сводки.",
   "",
 ].join("\n");
 
 const FALLBACK_SUMMARIZER_SKILL = [
   "---",
   "name: summarize-status",
-  "description: Write a short, colloquial summary for a Zworker summary slot: open with the 1–3 specific, concrete actions the reader needs to take right now to unblock the work, then a brief plain-language status, streaming progress as it works.",
+  "description: Написать короткую понятную сводку Zworker: сначала 1–3 конкретных действия, которые читателю нужно выполнить сейчас для разблокировки работы, затем краткое состояние простым языком с потоковым показом хода работы.",
   "key: paperclipai/bundled/paperclip-operations/summarize-status",
   "---",
   "",
-  "# Summarize status",
+  "# Сводка состояния",
   "",
-  "Turn a Zworker scope's current state into a short, colloquial Markdown summary and write it back to the scope's summary slot. Open with the 1–3 specific, concrete, actionable items the reader should do right now to unblock the work — each saying what to do and why it's the thing holding up progress, with an inline link — then a brief plain-prose status of where things stand, written for a reader who has not memorized issue ids or threads. Read whatever issues you need to understand the state, then focus on what's most important; never a task list or a dump of issue links. If genuinely nothing needs the reader, say so plainly in one line and name the next thing worth watching. Post the first `STATUS:` line immediately from the first task in context, keep streaming `STATUS:` lines while working, and emit the final Markdown between the summary-draft sentinels before the slot write. Read-and-report only; never fabricate status.",
+  "Преобразуйте текущее состояние области Zworker в короткую понятную Markdown-сводку и сохраните её в соответствующем слоте. Начните с 1–3 конкретных действий, которые читателю нужно выполнить сейчас для разблокировки работы: для каждого укажите, что сделать, почему это задерживает работу, и добавьте ссылку. Затем кратко опишите текущее положение простым языком для читателя, который не помнит идентификаторы задач и обсуждения. Прочитайте необходимые задачи, сосредоточьтесь на самом важном и не превращайте сводку в перечень задач или ссылок. Если от читателя ничего не требуется, прямо скажите об этом одной строкой и назовите следующий важный сигнал. Сразу отправьте первую строку `STATUS:` по первой задаче из контекста, продолжайте отправлять `STATUS:` во время работы и перед записью слота выведите итоговый Markdown между маркерами черновика. Только читайте и сообщайте; не выдумывайте состояние.",
   "",
 ].join("\n");
 
@@ -303,35 +303,35 @@ const SUMMARIZER_SKILL = readBuiltInTextWithFallback(
 const DEFINITIONS = validateBuiltInAgentDefinitions([
   {
     key: "briefs",
-    displayName: "Briefs Agent",
+    displayName: "Агент оперативных сводок",
     featureKeys: ["briefs"],
-    shortPurpose: "Prepares concise operational briefs for the board and agent company.",
+    shortPurpose: "Готовит краткие оперативные сводки для совета и агентской компании.",
     defaultInstructions:
-      "You are Zworker's built-in Briefs agent. Produce concise, sourced operational briefs that help the board understand current company work, risks, and next actions.",
+      "Вы — встроенный агент оперативных сводок Zworker. Готовьте краткие сводки со ссылками на источники, чтобы совет понимал текущую работу компании, риски и следующие действия.",
     defaultRole: "general",
     allowedAdapterTypes: ["codex_local", "claude_local", "gemini_local", "opencode_local", "process"],
     defaultBudgetMonthlyCents: 0,
   },
   {
     key: "learning",
-    displayName: "Learning Agent",
+    displayName: "Агент обучения",
     featureKeys: ["learning"],
-    shortPurpose: "Maintains reusable company learning from completed work and recurring patterns.",
+    shortPurpose: "Сохраняет переиспользуемые знания компании из завершённой работы и повторяющихся закономерностей.",
     defaultInstructions:
-      "You are Zworker's built-in Learning agent. Extract durable lessons from completed work, preserve useful patterns, and keep learning artifacts grounded in source context.",
+      "Вы — встроенный агент обучения Zworker. Извлекайте устойчивые выводы из завершённой работы, сохраняйте полезные закономерности и связывайте учебные материалы с исходным контекстом.",
     defaultRole: "general",
     allowedAdapterTypes: ["codex_local", "claude_local", "gemini_local", "opencode_local", "process"],
     defaultBudgetMonthlyCents: 0,
   },
   {
     key: "reflection-coach",
-    displayName: "Reflection Coach",
+    displayName: "Наставник по рефлексии",
     featureKeys: ["reflection-coach"],
     shortPurpose:
-      "Runs evidence-backed reflection loops on recent agent work, proposes small instruction and skill improvements, and requests approval before changes are applied.",
+      "Анализирует недавнюю работу агентов на основе фактов, предлагает небольшие улучшения инструкций и навыков и запрашивает одобрение до применения изменений.",
     defaultInstructions: REFLECTION_COACH_INSTRUCTIONS,
     defaultRole: "general",
-    defaultTitle: "Reflection Coach",
+    defaultTitle: "Наставник по рефлексии",
     defaultIcon: "eye",
     defaultPermissions: {
       canCreateAgents: false,
@@ -347,7 +347,7 @@ const DEFINITIONS = validateBuiltInAgentDefinitions([
     allowedAdapterTypes: ["claude_local", "codex_local", "gemini_local", "opencode_local", "process"],
     defaultBudgetMonthlyCents: 0,
     bundle: {
-      stockVersion: "2026-07-08",
+      stockVersion: "2026-08-13-ru",
       instructions: {
         entryFile: "AGENTS.md",
         files: {
@@ -356,7 +356,7 @@ const DEFINITIONS = validateBuiltInAgentDefinitions([
       },
       skill: {
         skillKey: "reflection-coach",
-        displayName: "Reflection Coach",
+        displayName: "Наставник по рефлексии",
         slug: "reflection-coach",
         canonicalKey: "paperclipai/bundled/paperclip-operations/reflection-coach",
         files: {
@@ -365,29 +365,29 @@ const DEFINITIONS = validateBuiltInAgentDefinitions([
       },
       routine: {
         routineKey: "recent-agent-reflection",
-        title: "Review recent agent trajectories for coaching proposals",
+        title: "Проверка недавней работы агентов для предложений по улучшению",
         description: REFLECTION_COACH_ROUTINE,
         status: "paused",
         priority: "medium",
         concurrencyPolicy: "coalesce_if_active",
         catchUpPolicy: "skip_missed",
         variables: [
-          { name: "lookbackDays", label: "Lookback days", type: "number", defaultValue: 7, required: true, options: [] },
-          { name: "maxTargetAgents", label: "Max target agents", type: "number", defaultValue: 8, required: true, options: [] },
+          { name: "lookbackDays", label: "Период анализа, дней", type: "number", defaultValue: 7, required: true, options: [] },
+          { name: "maxTargetAgents", label: "Максимум анализируемых агентов", type: "number", defaultValue: 8, required: true, options: [] },
           {
             name: "targetAgentMode",
-            label: "Target agent mode",
+            label: "Режим выбора агентов",
             type: "select",
             defaultValue: "recent_active",
             required: true,
             options: ["recent_active", "recent_blocked", "recent_completed"],
           },
-          { name: "excludeAgentIds", label: "Excluded agent ids", type: "text", defaultValue: "", required: false, options: [] },
+          { name: "excludeAgentIds", label: "Исключённые идентификаторы агентов", type: "text", defaultValue: "", required: false, options: [] },
         ],
         triggers: [
           {
             kind: "schedule",
-            label: "Weekly reflection review",
+            label: "Еженедельный анализ работы",
             enabled: false,
             cronExpression: "0 9 * * 1",
             timezone: "UTC",
@@ -398,13 +398,13 @@ const DEFINITIONS = validateBuiltInAgentDefinitions([
   },
   {
     key: "summarizer",
-    displayName: "Summarizer",
+    displayName: "Агент сводок",
     featureKeys: ["summarizer"],
     shortPurpose:
-      "Writes short, human-readable Markdown status summaries into project, workspaces-overview, and project-workspace summary slots on demand.",
+      "По запросу составляет короткие и понятные Markdown-сводки состояния проектов, обзора рабочих сред и отдельных рабочих сред проектов.",
     defaultInstructions: SUMMARIZER_INSTRUCTIONS,
     defaultRole: "general",
-    defaultTitle: "Summarizer",
+    defaultTitle: "Агент сводок",
     defaultIcon: "sparkles",
     defaultPermissions: {
       canCreateAgents: false,
@@ -419,7 +419,7 @@ const DEFINITIONS = validateBuiltInAgentDefinitions([
     },
     defaultBudgetMonthlyCents: 0,
     bundle: {
-      stockVersion: "2026-07-15",
+      stockVersion: "2026-08-13-ru",
       instructions: {
         entryFile: "AGENTS.md",
         files: {
@@ -428,7 +428,7 @@ const DEFINITIONS = validateBuiltInAgentDefinitions([
       },
       skill: {
         skillKey: "summarize-status",
-        displayName: "Summarize status",
+        displayName: "Сводка состояния",
         slug: "summarize-status",
         canonicalKey: "paperclipai/bundled/paperclip-operations/summarize-status",
         files: {
@@ -437,18 +437,18 @@ const DEFINITIONS = validateBuiltInAgentDefinitions([
       },
       routine: {
         routineKey: "refresh-stale-summaries",
-        title: "Refresh stale summary slots",
+        title: "Обновление устаревших сводок",
         description: SUMMARIZER_ROUTINE,
         status: "paused",
         priority: "medium",
         concurrencyPolicy: "coalesce_if_active",
         catchUpPolicy: "skip_missed",
         variables: [
-          { name: "staleAfterHours", label: "Refresh slots older than (hours)", type: "number", defaultValue: 24, required: true, options: [] },
-          { name: "maxSlots", label: "Max slots to refresh per run", type: "number", defaultValue: 10, required: true, options: [] },
+          { name: "staleAfterHours", label: "Обновлять сводки старше, часов", type: "number", defaultValue: 24, required: true, options: [] },
+          { name: "maxSlots", label: "Максимум сводок за запуск", type: "number", defaultValue: 10, required: true, options: [] },
           {
             name: "scopeKinds",
-            label: "Scope kinds to include",
+            label: "Включаемые типы областей",
             type: "select",
             defaultValue: "all",
             required: true,
@@ -458,7 +458,7 @@ const DEFINITIONS = validateBuiltInAgentDefinitions([
         triggers: [
           {
             kind: "schedule",
-            label: "Daily stale-summary refresh",
+            label: "Ежедневное обновление устаревших сводок",
             enabled: false,
             cronExpression: "0 8 * * *",
             timezone: "UTC",
@@ -1655,7 +1655,7 @@ export function builtInAgentService(db: Db) {
         ...definitionPatch(definition, resolvedInput),
         status: definition.defaultStatus ?? "idle",
         pauseReason: definition.defaultStatus === "paused"
-          ? `Built-in ${definition.displayName} is disabled until explicitly configured.`
+          ? `Встроенный агент «${definition.displayName}» отключён до явной настройки.`
           : null,
         pausedAt: definition.defaultStatus === "paused" ? new Date() : null,
         reportsTo,
@@ -1824,7 +1824,7 @@ export function builtInAgentService(db: Db) {
     await ensureCompany(companyId);
     const existing = await findSingleAgent(companyId, definition);
     if (!existing) return state(definition, null);
-    const patch = {
+    const patch: Partial<typeof agents.$inferInsert> = {
       name: definition.displayName,
       role: definition.defaultRole,
       title: definition.defaultTitle ?? null,
@@ -1832,11 +1832,45 @@ export function builtInAgentService(db: Db) {
       capabilities: definition.shortPurpose,
       metadata: builtInMetadata(definition, existing.metadata),
     };
+    if (
+      definition.defaultStatus === "paused"
+      && existing.status === "paused"
+      && existing.pauseReason?.startsWith("Built-in ")
+      && existing.pauseReason.endsWith(" is disabled until explicitly configured.")
+    ) {
+      patch.pauseReason = `Встроенный агент «${definition.displayName}» отключён до явной настройки.`;
+    }
     const updated = await agentSvc.update(existing.id, patch, {
       allowBuiltInAgentMetadata: true,
       recordRevision: { source: "built-in-agent:reconcile-defaults" },
     });
     if (!updated) throw notFound("Built-in agent not found");
+    if (updated.status === "pending_approval") {
+      const openApproval = await approvalSvc.findOpenHireApprovalForAgent(companyId, updated.id);
+      const payload = openApproval?.payload;
+      if (
+        openApproval
+        && typeof payload === "object"
+        && payload !== null
+        && !Array.isArray(payload)
+        && payload.sourceBuiltInAgentKey === definition.key
+      ) {
+        await db
+          .update(approvals)
+          .set({
+            payload: {
+              ...payload,
+              name: updated.name,
+              role: updated.role,
+              title: updated.title,
+              icon: updated.icon,
+              capabilities: updated.capabilities,
+            },
+            updatedAt: new Date(),
+          })
+          .where(eq(approvals.id, openApproval.id));
+      }
+    }
     await ensureBuiltInAgentDefaultGrants(updated as Agent, definition);
     return state(definition, updated as Agent);
   }

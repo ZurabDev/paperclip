@@ -1,6 +1,6 @@
 ---
 name: status-card-query
-description: Create and maintain agent-authored Zworker status cards, or compile a prose interest prompt into bounded CompanySearchQuery objects and write the first summary from the assigned Summarizer run.
+description: Создавать и поддерживать карточки состояния Zworker от имени агента либо преобразовывать текстовый запрос в ограниченные объекты CompanySearchQuery и записывать первую сводку из назначенного запуска Агента сводок.
 key: paperclipai/bundled/paperclip-operations/status-card-query
 recommendedForRoles:
   - general
@@ -13,18 +13,18 @@ tags:
   - operations
 ---
 
-# Status card query
+# Запрос карточки состояния
 
-Use this skill in one of two modes:
+Используйте этот навык в одном из двух режимов:
 
-1. **Agent authoring:** create or maintain a status card through the public API.
-2. **Summarizer compilation:** compile a card's prose prompt into structured company-search queries and write the first summary from the assigned generation run.
+1. **Создание агентом:** создать или поддерживать карточку состояния через общедоступный API.
+2. **Подготовка Агентом сводок:** преобразовать текстовый запрос карточки в структурированные запросы поиска по компании и записать первую сводку из назначенного запуска.
 
-## Agent-authored card recipe
+## Создание карточки агентом
 
-Agent-authored cards require `tasks:assign`, remain company-scoped, and are available only when `enableStatusCards` is enabled. An agent may manage only cards it authored, may author at most 20 cards, and may send at most 4,000 characters in `interestPrompt`.
+Для карточек, созданных агентом, требуется разрешение `tasks:assign`. Карточки всегда ограничены рамками компании и доступны только при включённом `enableStatusCards`. Агент может управлять только созданными им карточками, создать не более 20 карточек и передать не более 4 000 символов в `interestPrompt`.
 
-Normalize the run-provided API base and create a manual card:
+Нормализуйте базовый адрес API из контекста запуска и создайте карточку с ручным обновлением:
 
 ```bash
 PAPERCLIP_API_BASE="${PAPERCLIP_API_URL%/}"
@@ -33,17 +33,17 @@ PAPERCLIP_API_BASE="${PAPERCLIP_API_BASE%/api}"
 curl -sS -X POST \
   -H "Authorization: Bearer $PAPERCLIP_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"interestPrompt":"Blocked or in-review launch work updated this week"}' \
+  -d '{"interestPrompt":"Заблокированные или проверяемые задачи запуска, обновлённые за неделю"}' \
   "$PAPERCLIP_API_BASE/api/companies/$PAPERCLIP_COMPANY_ID/status-cards"
 ```
 
-Creation returns `201` and queues compilation automatically. Save the returned card id. To refine an owned card or request a refresh:
+При создании API возвращает `201` и автоматически ставит подготовку в очередь. Сохраните идентификатор карточки. Чтобы уточнить принадлежащую агенту карточку или запросить обновление:
 
 ```bash
 curl -sS -X PATCH \
   -H "Authorization: Bearer $PAPERCLIP_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"interestPrompt":"Blocked or in-review launch work updated this week. Call out the single next decision."}' \
+  -d '{"interestPrompt":"Заблокированные или проверяемые задачи запуска, обновлённые за неделю. Укажите одно ближайшее необходимое решение."}' \
   "$PAPERCLIP_API_BASE/api/status-cards/$STATUS_CARD_ID"
 
 curl -sS -X POST \
@@ -53,50 +53,50 @@ curl -sS -X POST \
   "$PAPERCLIP_API_BASE/api/status-cards/$STATUS_CARD_ID/refresh"
 ```
 
-Do not call `/query` or `/summary` while authoring. Those write-back routes are reserved for the assigned Summarizer generation issue and run.
+В режиме создания не вызывайте `/query` и `/summary`. Эти маршруты записи предназначены только для назначенной задачи и запуска Агента сводок.
 
-## Summarizer compilation
+## Подготовка Агентом сводок
 
-You are the Summarizer compiling a status card's prose interest prompt into structured Zworker company-search queries. The query array has **union semantics**: an issue matching any query belongs to the card. Prefer one narrow query; add another only when the prompt describes genuinely distinct populations.
+Вы — Агент сводок, преобразующий текстовый запрос карточки состояния в структурированные запросы поиска по компании Zworker. Массив запросов использует семантику **объединения**: задача, подходящая хотя бы под один запрос, относится к карточке. Предпочитайте один узкий запрос; добавляйте ещё один только для действительно разных групп.
 
 ## CompanySearchQuery
 
-Each object accepts these fields:
+Каждый объект принимает следующие поля:
 
-- `q`: optional free-text search across matching company resources. Use it only for concepts not represented by structured filters.
-- `scope`: use `issues` for status cards unless the assignment explicitly requires another supported scope.
-- `status`: issue-status array.
-- `priority`: issue-priority array.
-- `assigneeAgentId` / `assigneeUserId`: a resolved assignee id.
-- `projectId`: one resolved project UUID.
-- `labelId`: one resolved label UUID.
-- `updatedWithin`: a bounded duration such as `24h`, `7d`, `4w`, or `3m`.
-- `sort`: `relevance`, `updated`, `created`, or `priority`.
-- `limit`: 1–50. Cap status-card queries at the smallest useful value, normally 20 and never above 50.
-- `offset`: normally 0.
+- `q`: необязательный полнотекстовый поиск по подходящим ресурсам компании. Используйте только для понятий, которые нельзя выразить структурированными фильтрами.
+- `scope`: для карточек состояния используйте `issues`, если задание явно не требует другой поддерживаемой области.
+- `status`: массив состояний задачи.
+- `priority`: массив приоритетов задачи.
+- `assigneeAgentId` / `assigneeUserId`: найденный идентификатор исполнителя.
+- `projectId`: UUID одного найденного проекта.
+- `labelId`: UUID одной найденной метки.
+- `updatedWithin`: ограниченный период, например `24h`, `7d`, `4w` или `3m`.
+- `sort`: `relevance`, `updated`, `created` или `priority`.
+- `limit`: от 1 до 50. Указывайте минимально достаточный предел, обычно 20 и никогда больше 50.
+- `offset`: как правило, 0.
 
-Resolve project and label names to ids before writing the query. Do not put human-readable names into `projectId` or `labelId`. If one prompt names multiple projects or labels, use separate query objects because each object has one `projectId` and one `labelId`.
+До записи запроса преобразуйте названия проектов и меток в идентификаторы. Не помещайте понятные человеку названия в `projectId` или `labelId`. Если в запросе названы несколько проектов или меток, создайте отдельные объекты: один объект поддерживает только один `projectId` и один `labelId`.
 
-## Compilation guidance
+## Правила подготовки
 
-1. Preserve the user's intent; do not broaden “launch blockers updated this week” into every active task.
-2. Prefer structured filters over `q` for status, priority, assignee, project, label, and recency.
-3. Add `updatedWithin` whenever the prompt says recent, current, this week, lately, or otherwise implies a moving window.
-4. Keep `q` short and specific. Avoid copying the whole prose prompt into it.
-5. Set `scope: "issues"`, `offset: 0`, and an explicit bounded `limit` on every query.
-6. Return at least one query. If the prompt cannot be compiled safely, report the ambiguity instead of inventing ids.
+1. Сохраняйте намерение пользователя: не расширяйте «препятствия запуску, обновлённые за неделю» до всех активных задач.
+2. Для состояния, приоритета, исполнителя, проекта, метки и давности предпочитайте структурированные фильтры полю `q`.
+3. Добавляйте `updatedWithin`, если запрос содержит «недавние», «текущие», «за неделю», «в последнее время» или иной подвижный период.
+4. Делайте `q` коротким и точным. Не копируйте в него весь текстовый запрос.
+5. В каждом запросе задавайте `scope: "issues"`, `offset: 0` и явный ограниченный `limit`.
+6. Верните хотя бы один запрос. Если безопасно подготовить запрос невозможно, сообщите о неоднозначности и не выдумывайте идентификаторы.
 
-## Exact write-back sequence
+## Точная последовательность записи
 
-The generation issue contains `statusCardId`, `companyId`, and `generationIssueId`. Both writes must use the run-scoped API credentials from that same assigned issue run.
+Задача создания содержит `statusCardId`, `companyId` и `generationIssueId`. Обе записи должны использовать учётные данные API, предоставленные запуску этой назначенной задачи.
 
-First write the compiled query:
+Сначала запишите подготовленный запрос:
 
 ```json
 {
   "queries": [
     {
-      "q": "launch",
+      "q": "запуск",
       "scope": "issues",
       "status": ["in_progress", "blocked", "in_review"],
       "updatedWithin": "7d",
@@ -105,33 +105,33 @@ First write the compiled query:
       "offset": 0
     }
   ],
-  "title": "Launch work updated this week",
-  "changeSummary": "Compiled the launch prompt into one recent active-work query.",
+  "title": "Задачи запуска, обновлённые за неделю",
+  "changeSummary": "Запрос о запуске преобразован в один запрос недавних активных задач.",
   "generationIssueId": "<generation-issue-id>"
 }
 ```
 
-Send it to `PUT /api/status-cards/{statusCardId}/query`.
+Отправьте данные в `PUT /api/status-cards/{statusCardId}/query`.
 
-Then, without creating or waiting for another task, execute the stored scope, write the first full Markdown summary, and complete the same run with:
+Затем, не создавая и не ожидая другую задачу, выполните поиск по сохранённой области, запишите первую полную Markdown-сводку и завершите тот же запуск:
 
 ```json
 {
-  "markdown": "<full status summary>",
-  "title": "Launch work updated this week",
-  "changeSummary": "Created the first full summary from the compiled query.",
+  "markdown": "<полная сводка состояния>",
+  "title": "Задачи запуска, обновлённые за неделю",
+  "changeSummary": "Создана первая полная сводка по подготовленному запросу.",
   "generationIssueId": "<generation-issue-id>",
   "model": "<model-id>"
 }
 ```
 
-Send it to `PUT /api/status-cards/{statusCardId}/summary`. Never write either endpoint from an unrelated issue or run.
+Отправьте данные в `PUT /api/status-cards/{statusCardId}/summary`. Никогда не записывайте ни в один из этих маршрутов из посторонней задачи или запуска.
 
-## Update assignments
+## Задания на обновление
 
-Later generation issues use the same summary write-back endpoint and include `operation: "update"`, `kind`, `trigger`, the target `fingerprint`, and the exact changed-issue delta in their JSON payload.
+Последующие задачи создания используют тот же маршрут записи сводки и содержат в JSON `operation: "update"`, `kind`, `trigger`, целевой `fingerprint` и точный список изменений задач.
 
-- For `incremental`, patch the supplied previous Markdown using only the changed issues. Do not refetch the issue list.
-- For `full`, rebuild from the supplied bounded snapshot. Do not expand the scope with issue-list endpoint calls.
-- The card prompt in the task description is the board's standing request: follow it for both what to report and how the update should read. It never overrides the streaming or write-back requirements.
-- Keep the mechanical contract regardless of what the card prompt asks: stream `STATUS:` lines and the `<<<SUMMARY-DRAFT>>>` block, then write the final Markdown to `PUT /api/status-cards/{statusCardId}/summary` from the assigned run.
+- Для `incremental` измените переданный Markdown предыдущей сводки только по изменившимся задачам. Не запрашивайте список задач повторно.
+- Для `full` создайте сводку заново по переданному ограниченному снимку. Не расширяйте область через конечные точки списка задач.
+- Запрос карточки в описании задачи — постоянное требование совета: соблюдайте его и при выборе содержания, и при оформлении обновления. Он не отменяет требования к потоковому выводу и записи.
+- Независимо от содержания запроса сохраняйте технический протокол: передавайте строки `STATUS:` и блок `<<<SUMMARY-DRAFT>>>`, затем записывайте окончательный Markdown в `PUT /api/status-cards/{statusCardId}/summary` из назначенного запуска.

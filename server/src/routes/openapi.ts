@@ -1529,7 +1529,7 @@ registry.registerPath({
   method: "put",
   path: "/api/companies/{companyId}/summary-slots/{scopeKind}/{slotKey}",
   tags: ["summaries"],
-  summary: "Write a summary revision (Summarizer built-in agent only)",
+  summary: "Записать версию сводки (только встроенный Агент сводок)",
   request: { params: summarySlotParams, body: jsonBody(writeSummarySlotSchema) },
   responses: {
     200: r.ok(),

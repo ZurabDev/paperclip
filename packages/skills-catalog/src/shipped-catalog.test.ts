@@ -79,14 +79,14 @@ describe("shipped skills catalog", () => {
       "utf8",
     );
 
-    expect(skill).toContain("Post the first status update immediately, before doing anything else.");
-    expect(skill).toContain('STATUS: considering "Fix login redirect loop"…');
+    expect(skill).toContain("Сразу же отправьте первое обновление состояния, прежде чем делать что-либо ещё.");
+    expect(skill).toContain("STATUS: изучаю задачу «Исправить цикл перенаправления при входе»…");
     expect(skill).toContain("<<<SUMMARY-DRAFT>>>");
     expect(skill).toContain("<<<END-SUMMARY-DRAFT>>>");
-    expect(skill).toContain("tool-call arguments don't stream; assistant text does");
-    expect(skill).toContain("falls back to its spinner");
-    expect(skill).toContain("Open with what the reader needs to do.");
-    expect(skill).toContain("1–3 specific, concrete, actionable items");
+    expect(skill).toContain("Аргументы вызова инструмента не передаются в поток, а текст помощника передаётся");
+    expect(skill).toContain("интерфейс вернётся к индикатору загрузки");
+    expect(skill).toContain("Начинайте с действий, которые требуются от читателя.");
+    expect(skill).toContain("1–3 конкретных выполнимых действия");
   });
 
   it("keeps repo and catalog skill descriptions within the prompt budget cap", () => {

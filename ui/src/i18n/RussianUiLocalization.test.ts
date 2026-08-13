@@ -16,6 +16,14 @@ describe("RussianUiLocalization", () => {
   it("uses the reviewed Russian product vocabulary", () => {
     expect(translateRussianUiText("Dashboard")).toBe("Панель управления");
     expect(translateRussianUiText("New Task")).toBe("Новая задача");
+    expect(translateRussianUiText("Org")).toBe("Оргструктура");
+    expect(translateRussianUiText("Reflection Coach")).toBe("Наставник по рефлексии");
+    expect(translateRussianUiText("Summarizer")).toBe("Агент сводок");
+    expect(translateRussianUiText("Briefs")).toBe("Оперативные сводки");
+    expect(translateRussianUiText("Learnings")).toBe("Материалы обучения");
+    expect(translateRussianUiText("Set up the Summarizer")).toBe("Настроить Агента сводок");
+    expect(translateRussianUiText("Run Reflection Coach once?")).toBe("Запустить Наставника по рефлексии один раз?");
+    expect(translateRussianUiText("No recent agent runs.")).toBe("Недавних запусков агентов нет.");
   });
 
   it("preserves layout whitespace around translated text nodes", () => {
@@ -149,7 +157,7 @@ describe("RussianUiLocalization", () => {
       /\b[A-Z][a-z0-9]+(?:[A-Z][A-Za-z0-9]*)+\b/g,
       /--[a-z][a-z0-9-]*(?:=[^\s,]+)?/g,
       /\b[A-Za-z0-9_.-]+\.(?:md|json|ya?ml|tsx?|jsx?|mjs|cjs|sh|py|css|html|csv|zip)\b/g,
-      /https?:\/\/[^\s"'<>]+/g,
+      /https?:\/\/[^\s"'<>]+?(?=[,.;:!?)]?(?:\s|$))/g,
     ];
     const mismatches: string[] = [];
 

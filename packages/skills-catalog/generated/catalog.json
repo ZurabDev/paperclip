@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "packageName": "@paperclipai/skills-catalog",
   "packageVersion": "0.3.1",
-  "generatedAt": "2026-08-09T10:23:57.654Z",
+  "generatedAt": "2026-08-13T11:42:30.210Z",
   "skills": [
     {
       "id": "paperclipai:bundled:docs:doc-maintenance",
@@ -80,7 +80,7 @@
       "category": "paperclip-operations",
       "slug": "reflection-coach",
       "name": "reflection-coach",
-      "description": "Reflect on another agent's recent execution record and propose the smallest durable instruction, skill, or tool-description change. Use for evidence-backed coaching proposals, never hot-swaps.",
+      "description": "Проанализировать недавнюю работу другого агента и предложить минимальное устойчивое изменение инструкции, навыка или описания инструмента. Использовать только для подтверждённых фактами предложений, без немедленного применения.",
       "path": "catalog/bundled/paperclip-operations/reflection-coach",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
@@ -102,11 +102,11 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 12026,
-          "sha256": "6dc8f9ac58d5dfed4b562b3d79680312e074df87115a50a8fe5f2a472db1e507"
+          "sizeBytes": 14258,
+          "sha256": "e094648c3a3b5ebe854bc6890a009c2000dcc76b06ec0bd4a80645b5827e7a04"
         }
       ],
-      "contentHash": "sha256:2adc91d6213f85aff80e6a14019fcb166082e4b610a27eea375d87827fddcd7f"
+      "contentHash": "sha256:97cd594679fe5161295554b9f3bf76119263667671bc2611f87ae60491089152"
     },
     {
       "id": "paperclipai:bundled:paperclip-operations:status-card-query",
@@ -115,7 +115,7 @@
       "category": "paperclip-operations",
       "slug": "status-card-query",
       "name": "status-card-query",
-      "description": "Create and maintain agent-authored Zworker status cards, or compile a prose interest prompt into bounded CompanySearchQuery objects and write the first summary from the assigned Summarizer run.",
+      "description": "Создавать и поддерживать карточки состояния Zworker от имени агента либо преобразовывать текстовый запрос в ограниченные объекты CompanySearchQuery и записывать первую сводку из назначенного запуска Агента сводок.",
       "path": "catalog/bundled/paperclip-operations/status-card-query",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
@@ -137,11 +137,11 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 6364,
-          "sha256": "7d16e977890cd68dfb54d315c1226722474ec20ea42598a740a41f6787180854"
+          "sizeBytes": 10772,
+          "sha256": "a536c07045f75c627333f18456cb01559049dc452ef2bb04fc26bc21c4789261"
         }
       ],
-      "contentHash": "sha256:09b0b80ef31fe93b2498523cfb27eb8cf7755fe276204f01ab647283c25ff26d"
+      "contentHash": "sha256:279b64a784c29c956461bcd5607ec8011b3ef0b8e0bce893355603a47f4918e3"
     },
     {
       "id": "paperclipai:bundled:paperclip-operations:summarize-status",
@@ -150,7 +150,7 @@
       "category": "paperclip-operations",
       "slug": "summarize-status",
       "name": "summarize-status",
-      "description": "Write a short, colloquial summary for a Zworker summary slot: open with the 1–3 specific, concrete actions the reader needs to take right now to unblock the work, then a brief plain-language status, streaming progress as it works.",
+      "description": "Написать короткую понятную сводку Zworker: сначала 1–3 конкретных действия, которые читателю нужно выполнить сейчас для разблокировки работы, затем краткое состояние простым языком с потоковым показом хода работы.",
       "path": "catalog/bundled/paperclip-operations/summarize-status",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
@@ -172,11 +172,11 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 8674,
-          "sha256": "ffded2edaf13929b717befa7906c0f1d0ff99342e654b9e51e5ab49c1b0fe22a"
+          "sizeBytes": 15139,
+          "sha256": "2ca8b0d593ee7ee999250b765276a76380aad50e438351f49308289a13cfc8e9"
         }
       ],
-      "contentHash": "sha256:59eb4b521d66ba23c38493f54a79c8a944897ee7286c5840d37c3c60f248df37"
+      "contentHash": "sha256:33e1d77eccd6a8fdd9166d73e403064efa116d02e2442ef0ac34f3132fbbed79"
     },
     {
       "id": "paperclipai:bundled:paperclip-operations:task-planning",

@@ -121,13 +121,13 @@ function mapRevision(row: typeof documentRevisions.$inferSelect): SummarySlotRev
 function scopeLabel(scopeKind: SummarySlotScopeKind): string {
   switch (scopeKind) {
     case "project":
-      return "project";
+      return "проекта";
     case "project_workspace":
-      return "workspace";
+      return "рабочей среды";
     case "workspaces_overview":
-      return "workspaces overview";
+      return "обзора рабочих сред";
     default:
-      return "target";
+      return "выбранной области";
   }
 }
 
@@ -143,7 +143,7 @@ export function summarySlotService(db: Db) {
       scopeId: input.scopeId ?? undefined,
     });
     if (!parsed.success) {
-      throw unprocessable("Invalid summary slot selector", parsed.error.issues);
+      throw unprocessable("Недопустимый выбор слота сводки", parsed.error.issues);
     }
     return {
       ...parsed.data,
@@ -157,7 +157,7 @@ export function summarySlotService(db: Db) {
     if (sel.scopeKind === "workspaces_overview") return;
     if (!sel.scopeId) {
       // Guaranteed by the selector schema, but keep the invariant explicit.
-      throw unprocessable(`${sel.scopeKind} summary slots require scopeId`);
+      throw unprocessable(`Для слотов сводки типа ${sel.scopeKind} требуется scopeId`);
     }
     if (sel.scopeKind === "project") {
       const row = await db
@@ -165,7 +165,7 @@ export function summarySlotService(db: Db) {
         .from(projects)
         .where(and(eq(projects.id, sel.scopeId), eq(projects.companyId, sel.companyId)))
         .then((rows) => rows[0] ?? null);
-      if (!row) throw notFound("Summary target not found");
+      if (!row) throw notFound("Область для сводки не найдена");
       return;
     }
     if (sel.scopeKind === "project_workspace") {
@@ -174,7 +174,7 @@ export function summarySlotService(db: Db) {
         .from(projectWorkspaces)
         .where(and(eq(projectWorkspaces.id, sel.scopeId), eq(projectWorkspaces.companyId, sel.companyId)))
         .then((rows) => rows[0] ?? null);
-      if (!row) throw notFound("Summary target not found");
+      if (!row) throw notFound("Область для сводки не найдена");
     }
   }
 
@@ -362,29 +362,29 @@ export function summarySlotService(db: Db) {
       `### ${heading}`,
       ...(rows.length > 0
         ? rows.map((row) => {
-            const identifier = row.identifier ?? "Unnumbered issue";
+            const identifier = row.identifier ?? "Задача без номера";
             const companyPrefix = row.identifier?.split("-", 1)[0];
             const issueLink = companyPrefix
               ? `[${identifier}](/${companyPrefix}/issues/${identifier})`
               : identifier;
-            return `- ${issueLink} — ${row.title} (${row.priority}; updated ${row.updatedAt.toISOString()})`;
+            return `- ${issueLink} — ${row.title} (${row.priority}; обновлено ${row.updatedAt.toISOString()})`;
           })
-        : ["- None."]),
+        : ["- Нет."]),
     ];
 
     return [
-      "## Prebuilt scope snapshot",
+      "## Подготовленный снимок области",
       "",
-      `Snapshot generated at ${new Date().toISOString()}. Recently done means updated since ${recentlyDoneSince.toISOString()}.`,
-      "Use this bounded, company-scoped snapshot as the issue source of truth for this run. Do not call issue-list endpoints.",
+      `Снимок создан ${new Date().toISOString()}. Недавно завершёнными считаются задачи, обновлённые после ${recentlyDoneSince.toISOString()}.`,
+      "Используйте этот ограниченный рамками компании снимок как единственный источник сведений о задачах для текущего запуска. Не вызывайте конечные точки списка задач.",
       "",
-      ...formatGroup("Blocked", blocked),
+      ...formatGroup("Заблокировано", blocked),
       "",
-      ...formatGroup("In review", inReview),
+      ...formatGroup("На проверке", inReview),
       "",
-      ...formatGroup("In progress", inProgress),
+      ...formatGroup("В работе", inProgress),
       "",
-      ...formatGroup("Recently done", recentlyDone),
+      ...formatGroup("Недавно завершено", recentlyDone),
     ].join("\n");
   }
 
@@ -393,18 +393,18 @@ export function summarySlotService(db: Db) {
     scopeSnapshot: string,
     generationIssueId: string | null = null,
   ): string {
-    const target = sel.scopeId ? `\`${sel.scopeId}\`` : "the workspaces overview";
+    const target = sel.scopeId ? `\`${sel.scopeId}\`` : "обзор рабочих сред";
     const summarySlotPath = `/api/companies/${encodeURIComponent(sel.companyId)}/summary-slots/${encodeURIComponent(sel.scopeKind)}/${encodeURIComponent(sel.slotKey)}`;
     const scopeQuery = sel.scopeId ? `?scopeId=${encodeURIComponent(sel.scopeId)}` : "";
     return [
-      `Generate the ${scopeLabel(sel.scopeKind)} summary for ${target}.`,
+      `Создайте сводку ${scopeLabel(sel.scopeKind)} для ${target}.`,
       "",
-      "Call `/summarize-status`. Its API quick reference has the full request shapes; use these resolved routes for this generation:",
+      "Вызовите `/summarize-status`. Полные формы запросов приведены в кратком справочнике API этого навыка; для текущего запуска используйте следующие готовые маршруты:",
       "",
-      `- Read current slot: \`GET ${summarySlotPath}${scopeQuery}\``,
-      `- Write revision: \`PUT ${summarySlotPath}\``,
+      `- Прочитать текущий слот: \`GET ${summarySlotPath}${scopeQuery}\``,
+      `- Записать версию: \`PUT ${summarySlotPath}\``,
       "",
-      "Use this write payload:",
+      "Используйте следующие данные записи:",
       "",
       "```json",
       JSON.stringify(
@@ -419,20 +419,20 @@ export function summarySlotService(db: Db) {
       ),
       "```",
       "",
-      "Write one short, colloquial Markdown summary that opens with the 1–3 specific, concrete, actionable items the reader should do right now to unblock this work — each saying what to do and why it's the thing holding up progress, with an inline link — followed by a brief plain-prose status of where things stand. Use your judgment: read whatever issues you need to understand the state, then focus on what's most important. Write for a reader who has not memorized issue ids or threads. If genuinely nothing needs the reader, say so plainly in one line and name the next thing worth watching. Never a trailing list of issue links or any link dump. Not a task list.",
-      "The current-slot response includes the latest document body and `latestRevisionId`; use those directly.",
-      "Follow the skill's streaming protocol: emit the first plain-text `STATUS:` line immediately — named from the first task in the snapshot, before any analysis — keep emitting `STATUS:` lines as you think, and emit the sentinel-wrapped summary draft before the authoritative summary-slot write.",
-      "Pass the `generationIssueId` from the payload, the previous revision id when present, and the model actually used to the summary-slot write API.",
+      "Напишите одну короткую понятную Markdown-сводку. Начните с 1–3 конкретных выполнимых действий, которые читателю нужно сделать сейчас для разблокировки работы: для каждого укажите действие, причину задержки и встроенную ссылку. Затем кратко опишите текущее положение простым языком. Самостоятельно прочитайте необходимые задачи и сосредоточьтесь на самом важном. Пишите для читателя, который не помнит идентификаторы задач и обсуждения. Если от читателя действительно ничего не требуется, прямо скажите об этом одной строкой и назовите следующий важный сигнал. Не добавляйте в конце перечень задач или набор ссылок.",
+      "Ответ текущего слота содержит последнее тело документа и `latestRevisionId`; используйте их напрямую.",
+      "Следуйте потоковому протоколу навыка: немедленно, до анализа, отправьте первую строку `STATUS:` с названием первой задачи из снимка; продолжайте отправлять строки `STATUS:` во время работы и перед окончательной записью слота выведите черновик сводки между служебными маркерами.",
+      "Передайте в API записи слота `generationIssueId` из данных задания, идентификатор предыдущей версии при его наличии и фактически использованную модель.",
       "",
       scopeSnapshot,
       "",
-      "Close this task with a short comment once the summary revision is written.",
+      "После записи новой версии сводки завершите задачу коротким комментарием.",
     ].join("\n");
   }
 
   function generationIssueTitle(sel: ResolvedSelector, createdAt = new Date()): string {
     const timestamp = createdAt.toISOString().replace("T", " ").replace(/:\d{2}\.\d{3}Z$/, " UTC");
-    return `Summarize ${scopeLabel(sel.scopeKind)} on ${timestamp}`;
+    return `Сводка ${scopeLabel(sel.scopeKind)} на ${timestamp}`;
   }
 
   async function generate(
@@ -444,7 +444,7 @@ export function summarySlotService(db: Db) {
 
     const builtIn = await builtIns.get(sel.companyId, SUMMARIZER_BUILT_IN_KEY);
     if (builtIn.status !== "ready" || !builtIn.agentId) {
-      throw unprocessable("Summarizer built-in agent is not configured", {
+      throw unprocessable("Встроенный Агент сводок не настроен", {
         code: "summarizer_not_configured",
         status: builtIn.status,
       });
@@ -523,28 +523,28 @@ export function summarySlotService(db: Db) {
     actor: SummaryWriteActor,
   ): Promise<void> {
     if (!actor.agentId) {
-      throw forbidden("Only the Summarizer built-in agent may write summaries");
+      throw forbidden("Записывать сводки может только встроенный Агент сводок");
     }
     const agent = await agents.getById(actor.agentId);
     if (!agent || agent.companyId !== sel.companyId) {
-      throw forbidden("Only the Summarizer built-in agent may write summaries");
+      throw forbidden("Записывать сводки может только встроенный Агент сводок");
     }
     const marker = readBuiltInAgentMarker(agent.metadata);
     if (marker?.key !== SUMMARIZER_BUILT_IN_KEY) {
-      throw forbidden("Only the Summarizer built-in agent may write summaries");
+      throw forbidden("Записывать сводки может только встроенный Агент сводок");
     }
 
     // The write must originate from the linked, in-flight generation task.
     const generationIssueId = input.generationIssueId ?? null;
     if (!generationIssueId) {
-      throw forbidden("Summary writes must identify the active generation task");
+      throw forbidden("При записи сводки необходимо указать активную задачу создания");
     }
     if (!slotRow?.generatingIssueId || slotRow.generatingIssueId !== generationIssueId) {
-      throw forbidden("Summary write does not match the active generation task");
+      throw forbidden("Запись сводки не соответствует активной задаче создания");
     }
     const issueRef = await loadIssueRef(sel.companyId, generationIssueId);
     if (!issueRef.row) {
-      throw forbidden("Linked generation task not found");
+      throw forbidden("Связанная задача создания не найдена");
     }
     const payloadMatch = issueRef.row.description?.match(/```json\n([\s\S]*?)\n```/);
     let payload: Record<string, unknown> | null = null;
@@ -559,16 +559,16 @@ export function summarySlotService(db: Db) {
       (payload.scopeId ?? null) !== sel.scopeId ||
       payload.slotKey !== sel.slotKey
     ) {
-      throw forbidden("Generation task does not target this summary slot");
+      throw forbidden("Задача создания не относится к этому слоту сводки");
     }
     if (issueRef.row.assigneeAgentId !== actor.agentId) {
-      throw forbidden("Generation task is not assigned to this agent");
+      throw forbidden("Задача создания не назначена этому агенту");
     }
     const runId = actor.runId ?? null;
     const runMatches =
       !!runId && (issueRef.row.checkoutRunId === runId || issueRef.row.executionRunId === runId);
     if (!runMatches) {
-      throw forbidden("Summary write must run from the linked generation task");
+      throw forbidden("Запись сводки должна выполняться из связанной задачи создания");
     }
   }
 

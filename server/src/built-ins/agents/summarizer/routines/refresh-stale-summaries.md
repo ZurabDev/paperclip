@@ -1,7 +1,7 @@
 ---
 routineKey: refresh-stale-summaries
-title: Refresh stale summary slots
-description: Bounded, paused-by-default sweep that regenerates summary slots whose underlying scope has changed since the last revision. Spends no tokens until an operator enables its schedule or runs it manually. Read-and-report only — it never mutates issues, workspaces, or code.
+title: Обновление устаревших сводок
+description: Ограниченный, по умолчанию приостановленный проход, который заново создаёт сводки для областей, изменившихся после последней версии. Не расходует токены, пока оператор не включит расписание или не запустит вручную. Только читает и сообщает — никогда не изменяет задачи, рабочие среды или код.
 assigneeRef:
   resourceKind: agent
   resourceKey: summarizer
@@ -11,19 +11,19 @@ concurrencyPolicy: coalesce_if_active
 catchUpPolicy: skip_missed
 variables:
   - name: staleAfterHours
-    label: Refresh slots older than (hours)
+    label: Обновлять сводки старше, часов
     type: number
     defaultValue: 24
     required: false
     options: []
   - name: maxSlots
-    label: Max slots to refresh per run
+    label: Максимум сводок за запуск
     type: number
     defaultValue: 10
     required: false
     options: []
   - name: scopeKinds
-    label: Scope kinds to include
+    label: Включаемые типы областей
     type: select
     defaultValue: all
     required: false
@@ -34,7 +34,7 @@ variables:
       - project_workspace
 triggers:
   - kind: schedule
-    label: Daily stale-summary refresh
+    label: Ежедневное обновление устаревших сводок
     enabled: false
     cronExpression: "0 8 * * *"
     timezone: UTC
@@ -44,23 +44,23 @@ issueTemplate:
   surfaceVisibility: normal
 ---
 
-# Refresh stale summary slots
+# Обновление устаревших сводок
 
-This routine is **paused by default** and spends no tokens until an operator enables its schedule or triggers a manual run. The first release of the Summarizer is manual-generation-first; this routine exists so operators can opt into scheduled refreshes without background spend by default.
+По умолчанию этот сценарий **приостановлен** и не расходует токены, пока оператор не включит расписание или не запустит его вручную. Первая версия агента сводок ориентирована на ручное создание; сценарий позволяет оператору при необходимости включить обновление по расписанию без фоновых расходов по умолчанию.
 
-## What this run must do
+## Что должен сделать этот запуск
 
-1. Select summary slots whose scope has changed since their last revision and whose `lastGeneratedAt` is older than `{{staleAfterHours}}` hours. Restrict to `{{scopeKinds}}` when a specific kind is chosen. Cap the set at `{{maxSlots}}`, most-stale first.
-2. For each selected slot, run the `summarize-status` skill as the operating procedure: read the current revision, read the company-scoped state you need to understand where things are, and write one new Markdown revision back to the slot.
-3. Skip slots with no meaningful change since their last revision — do not spend tokens rewriting an unchanged summary.
+1. Выберите слоты сводок, область которых изменилась после последней версии, а `lastGeneratedAt` старше `{{staleAfterHours}}` часов. Если выбран конкретный тип, ограничьте выбор значением `{{scopeKinds}}`. Возьмите не более `{{maxSlots}}` слотов, начиная с самых устаревших.
+2. Для каждого слота следуйте навыку `summarize-status`: прочитайте текущую версию и необходимые данные компании, чтобы понять ситуацию, затем сохраните одну новую Markdown-версию в слот.
+3. Пропускайте слоты без существенных изменений после последней версии и не расходуйте токены на переписывание неизменившейся сводки.
 
-## Hard limits for this routine
+## Жёсткие ограничения сценария
 
-- Read-and-report only. This routine must never change issues, workspaces, code, or agent configuration — its only write is the summary revision.
-- Keep every read company-scoped. Do not cross company boundaries.
-- Run on the low-cost model profile lane (`cheap`). Keep each summary short.
-- Never fabricate status and never surface secrets from issue bodies or configs.
+- Только чтение и отчёт. Сценарий никогда не должен изменять задачи, рабочие среды, код или конфигурацию агентов; единственная допустимая запись — новая версия сводки.
+- Все чтения должны оставаться в пределах компании. Не пересекайте границы компаний.
+- Используйте экономичный профиль модели (`cheap`) и сохраняйте каждую сводку короткой.
+- Никогда не выдумывайте состояние и не показывайте секреты из описаний задач или конфигураций.
 
-## Output
+## Результат
 
-A single bounded routine issue that links the slots refreshed this run, plus a summary comment listing: scopes summarized, revisions written, slots skipped as unchanged, and any slot that could not be read (with the unblock owner).
+Одна ограниченная задача сценария со ссылками на обновлённые слоты и итоговым комментарием: какие области обработаны, какие версии записаны, какие слоты пропущены без изменений и какие слоты не удалось прочитать с указанием ответственного за разблокировку.

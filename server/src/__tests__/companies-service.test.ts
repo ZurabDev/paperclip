@@ -90,7 +90,7 @@ describeEmbeddedPostgres("companyService", () => {
     const reflectionRows = agentRows.filter((row) => readBuiltInAgentMarker(row.metadata)?.key === "reflection-coach");
     expect(reflectionRows).toHaveLength(1);
     expect(reflectionRows[0]).toMatchObject({
-      name: "Reflection Coach",
+      name: "Наставник по рефлексии",
       status: "paused",
       budgetMonthlyCents: 0,
       spentMonthlyCents: 0,
